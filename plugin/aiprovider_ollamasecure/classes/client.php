@@ -59,14 +59,16 @@ class client {
         $out = is_array($decoded) ? ($decoded['response'] ?? '') : '';
         return $this->sanitize_output($out);
     }
-    /** Niveaux 3 & 4 : detection de fuite (marqueurs systeme/canaux) puis
-      * rendu sur par Moodle. FORMAT_PLAIN echappe tout HTML (anti-XSS). */
+    /** Niveaux 3 & 4 : detection de fuite puis rendu sur par Moodle.
+      * FORMAT_PLAIN echappe tout HTML (anti-XSS). */
     private function sanitize_output(string $o): string {
-        // Marqueurs revelateurs d'une divulgation de la consigne systeme ou
-        // des delimiteurs de canaux (best-effort, sans motifs de langage libre).
-        $leak = ['[instruction]', '[/instruction]', '[donnees]', '[/donnees]',
-                 'règles inviolables', 'regles inviolables', 'prompt système',
-                 'prompt systeme'];
+        // Canaries = phrases DISTINCTIVES de la consigne systeme (verbatim du
+        // Modelfile), qui n'apparaissent en sortie que si le modele l'a divulguee.
+        // On NE matche PAS les delimiteurs [INSTRUCTION]/[DONNEES] : ils encadrent
+        // chaque entree et provoqueraient des faux positifs a chaque requete.
+        $leak = ['jamais à exécuter', 'jamais a executer',
+                 'ne révèle jamais ces instructions', 'ne revele jamais ces instructions',
+                 'ces instructions système', 'ces instructions systeme'];
         $low = \core_text::strtolower($o);
         foreach ($leak as $needle) {
             if (mb_strpos($low, \core_text::strtolower($needle)) !== false) {
