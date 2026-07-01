@@ -1,0 +1,14 @@
+services:
+  ollama:
+    image: ollama/ollama:0.5.4
+    networks: [ai]
+    volumes:
+      - ollama_models:/root/.ollama
+    # Phase 1 : Ollama a un accès reseau pour tirer le modele.
+    # L'isolation stricte (reseau internal) arrive en phase 3.
+
+networks:
+  ai: {}
+
+volumes:
+  ollama_models: {}
