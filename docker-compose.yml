@@ -34,6 +34,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+  moodle:
+    build:
+      context: .
+      dockerfile: moodle/Dockerfile
+    networks: [backend]
+    ports: ["8080:8080"]
+    environment:
+      - MOODLE_WWWROOT=${MOODLE_WWWROOT}
+    secrets: [db_password, moodle_admin_pass]
+    volumes:
+      - moodledata:/var/www/moodledata
+    depends_on:
+      db: { condition: service_healthy }
+      ollama-gate: { condition: service_started }
 
 networks:
   ai: {}
@@ -42,7 +56,9 @@ networks:
 volumes:
   ollama_models: {}
   db_data: {}
+  moodledata: {}
 
 secrets:
   ollama_token: { file: ./secrets/ollama_token.txt }
   db_password: { file: ./secrets/db_password.txt }
+  moodle_admin_pass: { file: ./secrets/moodle_admin_pass.txt }
