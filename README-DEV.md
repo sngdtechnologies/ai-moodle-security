@@ -14,6 +14,16 @@ cp secrets/ollama_token.txt.example       secrets/ollama_token.txt
 docker compose up -d --build
 ```
 
+## Tirer le modèle (obligatoire au premier déploiement)
+Le service `ollama` ne tire pas le modèle automatiquement en phase 1. Sur un déploiement neuf
+(volume `ollama_models` vide), le tuteur renverrait « indisponible » (Ollama répond 404
+`model not found`). Tirer le modèle une fois — il persiste ensuite dans le volume :
+```bash
+docker compose exec ollama ollama pull phi3:mini
+```
+> Le provisionnement automatisé et épinglé du modèle (Modelfile durci `tuteur-secure`,
+> `build-model.sh`, puis isolation réseau) est traité en phases 2 et 3.
+
 ## Accès Moodle (via tunnel SSH depuis ton poste)
 ```bash
 ssh -L 8080:localhost:8080 ubuntu@<IP_EC2>
