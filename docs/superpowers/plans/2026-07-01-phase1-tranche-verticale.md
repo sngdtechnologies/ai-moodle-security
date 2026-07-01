@@ -10,7 +10,8 @@
 
 ## Global Constraints
 
-- Plateforme d'exécution/test : **hôte Linux (EC2 Ubuntu 24.04)**. L'édition des fichiers peut se faire sous Windows, mais tout `docker compose`, `curl`, `ollama` et vérification tourne sur l'hôte Linux.
+- Plateforme d'exécution/test : **hôte Linux (EC2 Ubuntu 24.04)**. L'édition des fichiers peut se faire sous Windows, mais tout `docker compose`, `curl`, `ollama` et vérification tourne sur l'hôte Linux. Hôte : `ec2-13-53-187-154.eu-north-1.compute.amazonaws.com`, user `ubuntu`, clé `E:\EC2\MoodleKey.pem` (voir `.env`). **Docker déjà installé** lors de la Task 1 réelle si absent.
+- **Contrainte RAM (décision 2026-07-01)** : l'instance a **8 Go** (et non 16 Go). Décision : rester sur 8 Go et adapter les limites Ollama en **phase 3** → `OLLAMA_NUM_PARALLEL=1`, `deploy.resources.limits.memory` ~`3g` (au lieu de 2 slots / 6g). Aucun assouplissement des mesures de **sécurité** ; seul le dimensionnement matériel est ajusté. L'Ollama natif préexistant a été désinstallé.
 - Toutes les images seront épinglées par digest en **phase 3** ; en phase 1 on autorise des tags de version fixes (ex. `caddy:2.8`, `mariadb:11`) pour itérer vite. Ne pas utiliser `latest`.
 - Le plugin Moodle est de type **fournisseur** (`aiprovider_ollamasecure`), installé dans `ai/provider/ollamasecure` et **copié dans l'image** (le fs Moodle deviendra `read_only` en phase 3, donc jamais de montage volume pour le plugin).
 - Le client PHP appelle **la passerelle** `http://ollama-gate:11434/api/generate`, jamais Ollama directement.
