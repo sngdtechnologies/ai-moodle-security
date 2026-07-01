@@ -5,7 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 class client {
     const ENDPOINT = 'http://ollama-gate:11434/api/generate';
-    const MODEL    = 'phi3:mini'; // phase 2 : 'tuteur-secure'
+    const MODEL    = 'tuteur-secure';
     const MAX_LEN  = 6000;
 
     /** Niveau 1 : contrôle STRUCTUREL neutre. */
@@ -57,12 +57,17 @@ class client {
         $out = is_array($decoded) ? ($decoded['response'] ?? '') : '';
         return $this->sanitize_output($out);
     }
-    /** Niveaux 3 & 4. */
+    /** Niveaux 3 & 4 : detection de fuite (marqueurs systeme/canaux) puis
+      * rendu sur par Moodle. FORMAT_PLAIN echappe tout HTML (anti-XSS). */
     private function sanitize_output(string $o): string {
-        $leak = ['ces instructions', '[donnees]'];
+        // Marqueurs revelateurs d'une divulgation de la consigne systeme ou
+        // des delimiteurs de canaux (best-effort, sans motifs de langage libre).
+        $leak = ['[instruction]', '[/instruction]', '[donnees]', '[/donnees]',
+                 'règles inviolables', 'regles inviolables', 'prompt système',
+                 'prompt systeme'];
         $low = \core_text::strtolower($o);
         foreach ($leak as $needle) {
-            if (mb_strpos($low, $needle) !== false) {
+            if (mb_strpos($low, \core_text::strtolower($needle)) !== false) {
                 $this->log_alert('possible_prompt_leak', 0);
                 return get_string('blocked', 'aiprovider_ollamasecure');
             }
