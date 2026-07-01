@@ -45,9 +45,12 @@ class client {
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json',
                 'Authorization: Bearer ' . $token],
             CURLOPT_TIMEOUT        => 30]);
-        $raw = curl_exec($ch); $errno = curl_errno($ch); curl_close($ch);
-        if ($errno !== 0 || $raw === false) {
-            $this->log_alert('ollama_unreachable', $userid, (string)$errno);
+        $raw = curl_exec($ch); $errno = curl_errno($ch);
+        $httpcode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+        // Erreur de transport OU statut HTTP non 2xx (ex. 401 de la passerelle) :
+        // on ne doit pas avaler un echec d'auth en renvoyant une reponse vide.
+        if ($errno !== 0 || $raw === false || $httpcode < 200 || $httpcode >= 300) {
+            $this->log_alert('ollama_unreachable', $userid, 'errno=' . $errno . ' http=' . $httpcode);
             return get_string('aiunavailable', 'aiprovider_ollamasecure');
         }
         $decoded = json_decode($raw, true);
