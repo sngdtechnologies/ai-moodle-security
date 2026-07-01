@@ -44,7 +44,9 @@ class client {
             CURLOPT_POSTFIELDS     => $payload,
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json',
                 'Authorization: Bearer ' . $token],
-            CURLOPT_TIMEOUT        => 30]);
+            // 120s : adaptation a l'inference CPU sur l'instance 8 Go (une reponse
+            // longue depasse 30s a froid). Sur 16 Go + KEEP_ALIVE, <2s vise (these).
+            CURLOPT_TIMEOUT        => 120]);
         $raw = curl_exec($ch); $errno = curl_errno($ch);
         $httpcode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
         // Erreur de transport OU statut HTTP non 2xx (ex. 401 de la passerelle) :
