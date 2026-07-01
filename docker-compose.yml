@@ -6,9 +6,21 @@ services:
       - ollama_models:/root/.ollama
     # Phase 1 : Ollama a un accès reseau pour tirer le modele.
     # L'isolation stricte (reseau internal) arrive en phase 3.
+  ollama-gate:
+    image: caddy:2.8
+    networks: [backend, ai]
+    volumes:
+      - ./gate/Caddyfile:/etc/caddy/Caddyfile:ro
+    secrets: [ollama_token]
+    entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
+    depends_on: [ollama]
 
 networks:
   ai: {}
+  backend: {}
 
 volumes:
   ollama_models: {}
+
+secrets:
+  ollama_token: { file: ./secrets/ollama_token.txt }

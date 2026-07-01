@@ -1,0 +1,10 @@
+# gate/Caddyfile -- passerelle d'authentification devant Ollama
+:11434 {
+    @authorized header Authorization "Bearer {$OLLAMA_TOKEN}"
+    handle @authorized {
+        reverse_proxy http://ollama:11434
+    }
+    handle {
+        respond "Unauthorized" 401
+    }
+}
