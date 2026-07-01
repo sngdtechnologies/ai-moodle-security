@@ -23,5 +23,8 @@ fi
 # Met à niveau (détecte le nouveau plugin) de façon non interactive.
 php admin/cli/upgrade.php --non-interactive --allow-unstable || true
 
+# Configure le fournisseur IA (idempotent).
+php cli/configure_ai.php || echo "[entrypoint] configuration IA à finaliser manuellement"
+
 # Lance Apache au premier plan.
 exec apache2-foreground

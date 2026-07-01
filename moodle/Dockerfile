@@ -15,6 +15,9 @@ COPY plugin/aiprovider_ollamasecure /var/www/html/ai/provider/ollamasecure
 # config.php et entrypoint
 COPY moodle/config.php /var/www/html/config.php
 COPY moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh
+# Script de configuration IA (invoqué par l'entrypoint via cli/configure_ai.php).
+RUN mkdir -p /var/www/html/cli
+COPY moodle/cli/configure_ai.php /var/www/html/cli/configure_ai.php
 RUN chmod +x /usr/local/bin/moodle-entrypoint.sh && \
     mkdir -p /var/www/moodledata && chown -R www-data:www-data /var/www
 
