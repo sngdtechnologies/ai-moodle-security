@@ -2,7 +2,10 @@
 FROM moodlehq/moodle-php-apache:8.2
 
 ARG MOODLE_BRANCH=MOODLE_405_STABLE
-# Récupère le code Moodle 4.5 stable
+# Récupère le code Moodle 4.5 stable.
+# NB: l'image de base a WORKDIR /var/www/html ; on se place hors de ce dossier
+# avant de le supprimer, sinon git échoue (cwd supprimé sous ses pieds).
+WORKDIR /
 RUN rm -rf /var/www/html && \
     git clone --branch ${MOODLE_BRANCH} --depth 1 \
       https://github.com/moodle/moodle.git /var/www/html
