@@ -14,6 +14,26 @@ services:
     secrets: [ollama_token]
     entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
     depends_on: [ollama]
+  db:
+    image: mariadb:11.4
+    networks: [backend]
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-file-per-table=1
+    environment:
+      - MARIADB_DATABASE=moodle
+      - MARIADB_USER=moodle
+      - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_RANDOM_ROOT_PASSWORD=1
+    secrets: [db_password]
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 networks:
   ai: {}
@@ -21,6 +41,8 @@ networks:
 
 volumes:
   ollama_models: {}
+  db_data: {}
 
 secrets:
   ollama_token: { file: ./secrets/ollama_token.txt }
+  db_password: { file: ./secrets/db_password.txt }
