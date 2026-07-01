@@ -39,9 +39,12 @@ services:
       context: .
       dockerfile: moodle/Dockerfile
     networks: [backend]
-    ports: ["8080:8080"]
+    # L'image moodlehq/moodle-php-apache sert sur le port 80 interne.
+    ports: ["8080:80"]
     environment:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
+      # Requis par l'image de base : DocumentRoot = $APACHE_DOCUMENT_ROOT.
+      - APACHE_DOCUMENT_ROOT=/var/www/html
     secrets: [db_password, moodle_admin_pass]
     volumes:
       - moodledata:/var/www/moodledata

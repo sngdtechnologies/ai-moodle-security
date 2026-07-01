@@ -18,5 +18,5 @@ COPY moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh
 RUN chmod +x /usr/local/bin/moodle-entrypoint.sh && \
     mkdir -p /var/www/moodledata && chown -R www-data:www-data /var/www
 
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/moodle-entrypoint.sh"]
