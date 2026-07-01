@@ -1,0 +1,6 @@
+# Secrets — jamais versionnés (seuls les .example le sont)
+secrets/*.txt
+.env
+
+# Volumes / artefacts locaux
+*.log

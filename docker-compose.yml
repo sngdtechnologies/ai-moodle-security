@@ -1,0 +1,69 @@
+services:
+  ollama:
+    image: ollama/ollama:0.5.4
+    networks: [ai]
+    volumes:
+      - ollama_models:/root/.ollama
+    # Phase 1 : Ollama a un accès reseau pour tirer le modele.
+    # L'isolation stricte (reseau internal) arrive en phase 3.
+  ollama-gate:
+    image: caddy:2.8
+    networks: [backend, ai]
+    volumes:
+      - ./gate/Caddyfile:/etc/caddy/Caddyfile:ro
+    secrets: [ollama_token]
+    entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
+    depends_on: [ollama]
+  db:
+    image: mariadb:11.4
+    networks: [backend]
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-file-per-table=1
+    environment:
+      - MARIADB_DATABASE=moodle
+      - MARIADB_USER=moodle
+      - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_RANDOM_ROOT_PASSWORD=1
+    secrets: [db_password]
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  moodle:
+    build:
+      context: .
+      dockerfile: moodle/Dockerfile
+    networks: [backend]
+    # L'image moodlehq/moodle-php-apache sert sur le port 80 interne.
+    ports: ["8080:80"]
+    environment:
+      - MOODLE_WWWROOT=${MOODLE_WWWROOT}
+      # Requis par l'image de base : DocumentRoot = $APACHE_DOCUMENT_ROOT.
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    # ollama_token : lu par cli/configure_ai.php pour l'injecter dans la config
+    # du plugin (le client appelle la passerelle avec ce jeton porteur).
+    secrets: [db_password, moodle_admin_pass, ollama_token]
+    volumes:
+      - moodledata:/var/www/moodledata
+    depends_on:
+      db: { condition: service_healthy }
+      ollama-gate: { condition: service_started }
+
+networks:
+  ai: {}
+  backend: {}
+
+volumes:
+  ollama_models: {}
+  db_data: {}
+  moodledata: {}
+
+secrets:
+  ollama_token: { file: ./secrets/ollama_token.txt }
+  db_password: { file: ./secrets/db_password.txt }
+  moodle_admin_pass: { file: ./secrets/moodle_admin_pass.txt }
