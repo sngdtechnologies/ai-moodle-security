@@ -45,7 +45,9 @@ services:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
       # Requis par l'image de base : DocumentRoot = $APACHE_DOCUMENT_ROOT.
       - APACHE_DOCUMENT_ROOT=/var/www/html
-    secrets: [db_password, moodle_admin_pass]
+    # ollama_token : lu par cli/configure_ai.php pour l'injecter dans la config
+    # du plugin (le client appelle la passerelle avec ce jeton porteur).
+    secrets: [db_password, moodle_admin_pass, ollama_token]
     volumes:
       - moodledata:/var/www/moodledata
     depends_on:
