@@ -18,5 +18,8 @@ COPY moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh
 RUN chmod +x /usr/local/bin/moodle-entrypoint.sh && \
     mkdir -p /var/www/moodledata && chown -R www-data:www-data /var/www
 
+# Restaure le WORKDIR attendu (on l'avait mis a / pour le clone).
+WORKDIR /var/www/html
+
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/moodle-entrypoint.sh"]
