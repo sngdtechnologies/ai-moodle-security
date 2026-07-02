@@ -20,7 +20,7 @@ services:
       - ./ollama:/models:ro
     # Reseau ouvert en Task 2-5 (pull du modele) ; internal:true en Task 6.
   ollama-gate:
-    image: caddy:2.8@sha256:226d1f059b75399fe19182893c7184591c07b97afc8dfcf44eeb80c9a77a530f
+    build: ./gate                        # Caddy durci (fscap retiree pour no-new-privileges)
     networks: [backend, ai]
     volumes:
       - ./gate/Caddyfile:/etc/caddy/Caddyfile:ro
