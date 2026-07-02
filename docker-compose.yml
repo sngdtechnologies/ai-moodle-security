@@ -12,6 +12,8 @@ services:
       - no-new-privileges:true
       - seccomp=./ollama/seccomp-ollama.json
     cap_drop: [ALL]
+    read_only: true                      # rootfs en lecture seule (surface d'entree non fiable)
+    tmpfs: [/tmp]                        # (Compose n'expose pas noexec ; cf. RESULTS-phase3)
     deploy:
       resources:
         limits: { cpus: '2.0', memory: 3g }   # instance 2 vCPU / 8 Go (adapte de 4c/16Go)
@@ -31,6 +33,7 @@ services:
     cap_drop: [ALL]
     read_only: true
     tmpfs: [/tmp, /config, /data]
+    mem_limit: 256m
   db:
     image: mariadb:11.4@sha256:1b46b73d4b629022dfa29e6db3bb0d63b5df714fc3bfbe5057d63d76d8f6054b
     networks: [backend]
@@ -46,7 +49,8 @@ services:
     secrets: [db_password]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
-    cap_add: [CHOWN, SETGID, SETUID, DAC_OVERRIDE]   # minimum requis par MariaDB
+    cap_add: [CHOWN, SETGID, SETUID]   # minimum MariaDB (DAC_OVERRIDE retire, moindre privilege)
+    mem_limit: 1g
     read_only: true
     tmpfs: [/tmp, /run/mysqld]
     volumes:
@@ -62,6 +66,7 @@ services:
       dockerfile: moodle/Dockerfile
     networks: [dmz, backend]             # reseaux internes uniquement (aucun egress)
     user: "33:33"                        # www-data (Tableau 8)
+    mem_limit: 1500m                     # evite l'OOM hote sur 8 Go
     environment:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
       - APACHE_DOCUMENT_ROOT=/var/www/html
@@ -91,6 +96,7 @@ services:
     cap_drop: [ALL]
     read_only: true
     tmpfs: [/tmp, /config, /data]
+    mem_limit: 256m
     depends_on: [moodle]
 
 networks:
