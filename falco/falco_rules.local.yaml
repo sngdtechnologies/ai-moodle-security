@@ -1,32 +1,47 @@
 # falco_rules.local.yaml -- supervision du conteneur d'inference Ollama (Annexe E).
+#
+# Note de robustesse : les regles reposent sur proc.name (comme l'Annexe E). C'est une
+# heuristique : un attaquant capable d'executer dans le conteneur pourrait renommer son
+# binaire pour usurper l'allowlist (limite connue, cf. RESULTS-phase6). Un durcissement
+# par proc.exepath/hash releve de la mise en production. L'allowlist est reduite au strict
+# necessaire observe (binaire ollama + sous-processus d'inference) pour limiter cette surface.
+
 - macro: ollama_container
   condition: container.image.repository contains "ollama"
 
+# Interpreteurs de commandes (liste elargie) : partagee par les deux regles pour
+# les rendre MUTUELLEMENT EXCLUSIVES (un shell -> CRITICAL uniquement ; un autre
+# processus inattendu -> WARNING uniquement). Ainsi la CRITICAL se declenche meme
+# avec la config Falco par defaut (rule_matching: first), sans reglage hote.
+- macro: shell_binaries
+  condition: proc.name in (sh, bash, dash, ash, zsh, ksh, csh, tcsh, fish, busybox)
+
 - rule: Ollama - processus inattendu
-  desc: Tout processus autre que le binaire ollama dans le conteneur
-  # Allowlist calibree a la version deployee (Annexe E : affinage obligatoire) :
-  # 'ollama_llama_se' est le sous-processus d'inference (comm tronque a 15 car.).
-  condition: spawned_process and ollama_container and not proc.name in (ollama, runner, ollama_llama_se)
+  desc: Tout processus non attendu (hors shell) dans le conteneur Ollama
+  # Allowlist calibree a la version deployee : 'ollama_llama_se' = sous-processus
+  # d'inference (comm tronque a 15 car.). 'runner' retire (non observe = nom
+  # d'usurpation gratuit). Les shells sont exclus ici (traites en CRITICAL ci-dessous).
+  condition: spawned_process and ollama_container and not proc.name in (ollama, ollama_llama_se) and not shell_binaries
   output: >
     Processus inattendu dans le conteneur Ollama
-    (proc=%proc.name parent=%proc.pname cmd=%proc.cmdline
+    (proc=%proc.name exe=%proc.exepath parent=%proc.pname cmd=%proc.cmdline
      image=%container.image.repository)
   priority: WARNING
   tags: [container, llm, mitre_execution]
 
 - rule: Ollama - interpreteur de commandes
   desc: Un shell est lance dans le conteneur Ollama (exploitation probable)
-  condition: spawned_process and ollama_container and proc.name in (sh, bash, dash, ash, zsh)
+  condition: spawned_process and ollama_container and shell_binaries
   output: >
     Shell ouvert dans le conteneur Ollama
-    (shell=%proc.name parent=%proc.pname cmd=%proc.cmdline)
+    (shell=%proc.name exe=%proc.exepath parent=%proc.pname cmd=%proc.cmdline)
   priority: CRITICAL
   tags: [container, llm, shell]
 
 - rule: Ollama - connexion sortante interdite
   desc: Ollama est isole ; toute sortie reseau signale une exfiltration
-  # Exception loopback IPv4 ET IPv6 (Annexe E : la resolution DNS locale d'Ollama
-  # cible ::1:53 ; sans ::1 la regle produit un faux positif a chaque requete).
+  # Exception loopback IPv4 et IPv6 (la resolution DNS locale d'Ollama cible ::1:53 ;
+  # ::1 ne quitte pas le namespace reseau, donc n'est pas une exfiltration).
   condition: outbound and ollama_container and not fd.sip in ("127.0.0.1", "::1")
   output: >
     Connexion sortante depuis le conteneur Ollama
