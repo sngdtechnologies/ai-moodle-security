@@ -48,6 +48,21 @@ mémoire (« isolé au niveau réseau, filtré au niveau schéma, cantonné au c
 - Login Moodle HTTPS via proxy = 200 ; durcissement, WAF et confidentialité des phases précédentes
   préservés. Le tuteur reste fonctionnel (chemin interne moodle→gate→ollama, inchangé).
 
+## Corrections / notes de revue (Opus) — aucun Critical
+- **M1** : `mosquitto_sub` préfixé de `timeout 10` (borne l'établissement de connexion si le broker
+  ne répond pas au niveau TCP) — corrigé.
+- **M3** : l'indice n'agrège plus que les mesures de type `attention` (auparavant `presence` 0/1 et
+  `attention` 0-100 étaient moyennés ensemble, diluant l'indice) — corrigé.
+- **I1 (résidu assumé)** : Moodle rejoignant `iot` (nécessaire pour que la tâche joigne le courtier,
+  conforme au Tableau 7 du mémoire), son interface HTTP `moodle:8080` devient joignable depuis `iot`
+  — un capteur compromis pourrait attaquer l'application Moodle **directement, sans passer par le
+  WAF** (qui ne siège qu'au proxy). Le **confinement d'Ollama reste intact** (Docker ne route pas
+  entre réseaux ; `mosquitto` n'est pas sur `ai`). Mitigation de production : restreindre l'inbound
+  `iot→moodle:8080` par un pare-feu hôte / une politique réseau (Moodle n'a besoin que du flux
+  sortant vers `mosquitto:1883`). Documenté comme résidu du volet circonscrit.
+- **M2 (assumé)** : `allow_anonymous true` sans ACL sur le réseau `iot` isolé — un capteur peut
+  usurper un topic ; c'est précisément le modèle de menace neutralisé par la médiation côté schéma.
+
 ## Notes / reporté
 - Volet **circonscrit** (comme le mémoire) : l'injection réelle de l'indicateur dans le prompt
   (côté instruction, `indice_attention=0.48`), un schéma d'agrégation riche et MQTT

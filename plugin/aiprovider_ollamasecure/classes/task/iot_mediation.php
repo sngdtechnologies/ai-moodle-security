@@ -19,32 +19,37 @@ class iot_mediation extends \core\task\scheduled_task {
     }
 
     public function execute(): void {
-        // Draine les valeurs RETAINED disponibles (CLI mosquitto_sub, timeout court).
-        $cmd = sprintf('mosquitto_sub -h %s -t %s -C 20 -W 3 2>/dev/null',
+        // Draine les valeurs RETAINED disponibles (CLI mosquitto_sub). 'timeout 10'
+        // borne l'etablissement de connexion (si le broker ne repond pas au niveau
+        // TCP) ; '-W 3' borne la reception des messages.
+        $cmd = sprintf('timeout 10 mosquitto_sub -h %s -t %s -C 20 -W 3 2>/dev/null',
             escapeshellarg(self::BROKER), escapeshellarg(self::TOPIC));
         $raw = shell_exec($cmd);
         $lines = $raw ? array_filter(array_map('trim', explode("\n", $raw))) : [];
 
-        $valides = [];
+        $attention = [];  // valeurs de type 'attention' (seules agregees dans l'indice)
+        $valides = 0;     // total conforme au schema (tous types de capteurs)
         $rejets = 0;
         foreach ($lines as $line) {
             $m = json_decode($line, true);
             if (!$this->schema_ok($m)) { $rejets++; continue; }   // schema strict
-            $valides[] = (float) $m['value'];
+            $valides++;
+            if ($m['type'] === 'attention') { $attention[] = (float) $m['value']; }
         }
         if ($rejets > 0) {
             // Journal minimise : categorie + compte, jamais le contenu brut du capteur.
             debugging("ollamasecure[iot_rejects]=$rejets", DEBUG_NORMAL);
         }
-        if ($valides) {
-            // Agregation -> indicateur BORNE [0,1] (strictement numerique, jamais de texte).
-            $moy = array_sum($valides) / count($valides);
+        if ($attention) {
+            // Agregation des seules mesures 'attention' -> indicateur BORNE [0,1]
+            // (strictement numerique, jamais de texte).
+            $moy = array_sum($attention) / count($attention);
             $indice = max(0.0, min(1.0, $moy / 100.0));
             set_config('indice_attention', sprintf('%.2f', $indice), 'aiprovider_ollamasecure');
             mtrace("iot_mediation: indice_attention=" . sprintf('%.2f', $indice)
-                . " (valides=" . count($valides) . ", rejets=$rejets)");
+                . " (attention=" . count($attention) . ", valides=$valides, rejets=$rejets)");
         } else {
-            mtrace("iot_mediation: aucune mesure valide (rejets=$rejets)");
+            mtrace("iot_mediation: aucune mesure d'attention valide (valides=$valides, rejets=$rejets)");
         }
     }
 
