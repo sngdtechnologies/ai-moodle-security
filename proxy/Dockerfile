@@ -1,7 +1,8 @@
 # proxy/Dockerfile -- Caddy public compile avec le WAF Coraza (OWASP CRS).
 FROM caddy:2.8-builder@sha256:9f86856dd089cd85f546b6a022079c9f157ab62bc1d688ecd9b5d474ea81a487 AS build
+# v2.4.0 : derniere version compatible Go 1.23 du builder (v2.5.0 exige Go 1.25).
 RUN xcaddy build \
-    --with github.com/corazawaf/coraza-caddy/v2
+    --with github.com/corazawaf/coraza-caddy/v2@v2.4.0
 
 FROM caddy:2.8@sha256:226d1f059b75399fe19182893c7184591c07b97afc8dfcf44eeb80c9a77a530f
 COPY --from=build /usr/bin/caddy /usr/bin/caddy
