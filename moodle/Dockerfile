@@ -2,6 +2,10 @@
 FROM moodlehq/moodle-php-apache:8.2@sha256:d265924f93043170ab7c4d4cff49db68667d5bef1df6b3377627cd6b80e758e4
 
 ARG MOODLE_BRANCH=MOODLE_405_STABLE
+
+# Client MQTT pour la tache de mediation IoT (mosquitto_sub).
+RUN apt-get update && apt-get install -y --no-install-recommends mosquitto-clients && rm -rf /var/lib/apt/lists/*
+
 # Récupère le code Moodle 4.5 stable.
 # NB: l'image de base a WORKDIR /var/www/html ; on se place hors de ce dossier
 # avant de le supprimer, sinon git échoue (cwd supprimé sous ses pieds).

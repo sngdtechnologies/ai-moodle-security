@@ -17,6 +17,10 @@ localhost {
 			Include @crs-setup.conf.example
 			Include @owasp_crs/*.conf
 			SecRuleEngine On
+			# Inspection des REPONSES desactivee : la sortie du tuteur (code/maths
+			# pedagogiques) ne doit pas etre scannee/bufferisee par le CRS ; sa
+			# surete est deja assuree par le niveau N4 (FORMAT_PLAIN cote plugin).
+			SecResponseBodyAccess Off
 		`
 	}
 
