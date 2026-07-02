@@ -4,3 +4,4 @@ $string['blocked']      = 'Request not authorised in the pedagogical context.';
 $string['aiunavailable'] = 'The AI tutor is temporarily unavailable.';
 $string['ratelimited']  = 'Too many requests. Please try again later.';
 $string['ollamasecure:use'] = 'Use the Ollama Secure AI tutor';
+$string['task_iot_mediation'] = 'IoT (MQTT) flow mediation';
