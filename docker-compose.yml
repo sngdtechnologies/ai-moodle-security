@@ -109,6 +109,14 @@ services:
     read_only: true
     tmpfs: [/tmp]
     mem_limit: 128m
+  publisher:
+    build: { context: ., dockerfile: iot/publisher/Dockerfile }
+    networks: [iot]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    mem_limit: 64m
+    depends_on: [mosquitto]
 
 networks:
   edge: {}                      # seul reseau avec acces Internet (proxy public)
