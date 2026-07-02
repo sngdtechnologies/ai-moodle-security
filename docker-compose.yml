@@ -2,11 +2,23 @@ services:
   ollama:
     image: ollama/ollama:0.5.4@sha256:18bfb1d605604fd53dcad20d0556df4c781e560ebebcd923454d627c994a0e37
     networks: [ai]
+    user: "1000:1000"                    # non-root (Tableau 8)
+    environment:
+      - HOME=/home/ollama                # -> OLLAMA_MODELS=/home/ollama/.ollama/models
+      - OLLAMA_NUM_PARALLEL=1            # 8 Go : 1 slot (KV-cache limite)
+      - OLLAMA_MAX_QUEUE=64             # back-pressure -> 503 au-dela
+      - OLLAMA_KEEP_ALIVE=24h          # garde le modele chaud (evite recharges)
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./ollama/seccomp-ollama.json
+    cap_drop: [ALL]
+    deploy:
+      resources:
+        limits: { cpus: '3.0', memory: 3g }
     volumes:
-      - ollama_models:/root/.ollama
+      - ollama_models:/home/ollama/.ollama
       - ./ollama:/models:ro
-    # Phase 1 : Ollama a un accès reseau pour tirer le modele.
-    # L'isolation stricte (reseau internal) arrive en phase 3.
+    # Reseau ouvert en Task 2-5 (pull du modele) ; internal:true en Task 6.
   ollama-gate:
     image: caddy:2.8@sha256:226d1f059b75399fe19182893c7184591c07b97afc8dfcf44eeb80c9a77a530f
     networks: [backend, ai]
