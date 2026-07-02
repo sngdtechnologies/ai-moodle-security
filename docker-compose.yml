@@ -85,8 +85,8 @@ services:
       ollama-gate: { condition: service_started }
 
 networks:
-  ai: {}
-  backend: {}
+  ai:      { internal: true }   # ollama isole : aucune route sortante
+  backend: { internal: true }   # moodle/db/gate : aucune route sortante
 
 volumes:
   ollama_models: {}
