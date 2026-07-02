@@ -27,6 +27,10 @@ services:
     secrets: [ollama_token]
     entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
     depends_on: [ollama]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp, /config, /data]
   db:
     image: mariadb:11.4@sha256:1b46b73d4b629022dfa29e6db3bb0d63b5df714fc3bfbe5057d63d76d8f6054b
     networks: [backend]
@@ -40,6 +44,11 @@ services:
       - MARIADB_PASSWORD_FILE=/run/secrets/db_password
       - MARIADB_RANDOM_ROOT_PASSWORD=1
     secrets: [db_password]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID, DAC_OVERRIDE]   # minimum requis par MariaDB
+    read_only: true
+    tmpfs: [/tmp, /run/mysqld]
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
