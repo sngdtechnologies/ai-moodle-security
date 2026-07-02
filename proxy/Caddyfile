@@ -1,0 +1,6 @@
+# proxy/Caddyfile -- Phase 3 : proxy public minimal (relais HTTP simple).
+# Seul point expose ; Moodle reste sur des reseaux internes (aucun egress).
+# Phase 4 : ajout de TLS + WAF Coraza (OWASP CRS) devant ce reverse_proxy.
+:8080 {
+	reverse_proxy moodle:8080
+}

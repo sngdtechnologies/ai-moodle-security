@@ -60,8 +60,7 @@ services:
     build:
       context: .
       dockerfile: moodle/Dockerfile
-    networks: [backend]
-    ports: ["8080:8080"]                 # Apache sur 8080 interne (non-root)
+    networks: [dmz, backend]             # reseaux internes uniquement (aucun egress)
     user: "33:33"                        # www-data (Tableau 8)
     environment:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
@@ -83,8 +82,20 @@ services:
     depends_on:
       db: { condition: service_healthy }
       ollama-gate: { condition: service_started }
+  proxy:
+    build: ./proxy                       # Caddy relais (Phase 4 : +WAF Coraza +TLS)
+    networks: [edge, dmz]
+    ports: ["8080:8080"]                 # seul point expose
+    volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp, /config, /data]
+    depends_on: [moodle]
 
 networks:
+  edge: {}                      # seul reseau avec acces Internet (proxy public)
+  dmz:     { internal: true }   # proxy <-> moodle
   ai:      { internal: true }   # ollama isole : aucune route sortante
   backend: { internal: true }   # moodle/db/gate : aucune route sortante
 
