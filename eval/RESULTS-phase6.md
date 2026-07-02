@@ -22,9 +22,12 @@ Ouverture d'un shell dans le conteneur Ollama (`docker exec … sh -c …`) :
 | **Shell ouvert dans le conteneur Ollama** | **CRITICAL** | ✅ (`shell=sh`) |
 | **Processus inattendu dans le conteneur Ollama** | WARNING | ✅ (`proc=sh`, `proc=whoami`) |
 
-> Point de configuration hôte : `rule_matching: all` dans `/etc/falco/falco.yaml` (le défaut récent
-> `first` ne déclenche que la première règle correspondante par événement, masquant la règle
-> CRITICAL au profit de la WARNING listée avant). Les règles de l'Annexe E restent **inchangées**.
+> **Robustesse (correctif de revue P6)** : les deux règles sont rendues **mutuellement exclusives**
+> — la règle « processus inattendu » exclut désormais les shells (traités par la règle CRITICAL).
+> Chaque processus déclenche donc exactement une règle, et la CRITICAL se déclenche **avec la
+> config Falco par défaut** (`rule_matching: first`) — plus aucune dépendance à un réglage hôte non
+> versionné (l'artefact `falco_rules.local.yaml` est autosuffisant). Vérifié : `sh` → CRITICAL,
+> sa commande enfant (`id`) → WARNING.
 
 ## Calibration empirique (affinage obligatoire, Annexe E)
 
@@ -45,6 +48,18 @@ n'initie aucune connexion Internet ; seule sa résolution DNS locale, désormais
 ## Non-régression
 - Le tuteur reste fonctionnel (Falco observe sans interférer) ; durcissement, WAF, isolation et
   confidentialité des phases précédentes préservés.
+
+## Correctifs / notes de revue (Opus) — aucun Critical
+- **I1** (le CRITICAL ne survivait que via `rule_matching: all`, réglage hôte non versionné) →
+  **fermé** : règles rendues mutuellement exclusives, autosuffisantes avec la config par défaut.
+- **I2** (allowlist par `proc.name` = surface d'évasion) → **atténué** : `runner` retiré (non observé,
+  nom d'usurpation gratuit) ; allowlist réduite au strict observé. **Limite connue documentée** :
+  un attaquant capable d'exécuter dans le conteneur pourrait renommer son binaire en `ollama` /
+  `ollama_llama_se` pour s'y soustraire — limite intrinsèque des règles `proc.name` (Annexe E) ; un
+  durcissement par `proc.exepath`/hash relève de la mise en production (le chemin est déjà journalisé
+  dans la sortie via `%proc.exepath`).
+- Liste de shells élargie (`busybox`, `ksh`, `csh`, `tcsh`, `fish`). Exception réseau : `::1` ne
+  quitte pas le namespace conteneur → n'atténue aucune exfiltration réelle.
 
 ## Notes / reporté
 - Persistance/agrégation des alertes dans un service de journalisation dédié + rétention conforme à
