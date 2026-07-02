@@ -57,7 +57,8 @@ cf. `RESULTS-phase2.md`). Une injection directe reste refusée sous la pile durc
 ## Corrections post-revue (revue finale Opus)
 - **I1** : `ollama` passe en `read_only: true` + `tmpfs [/tmp]` (c'était le seul service applicatif
   sans rootfs en lecture seule, alors qu'il traite l'entrée non fiable). Corrigé.
-- **M4** : `DAC_OVERRIDE` retiré de `db` (moindre privilège ; MariaDB démarre avec CHOWN/SETUID/SETGID).
+- **M4** : tentative de retrait de `DAC_OVERRIDE` de `db` → MariaDB **ne démarre plus** sous
+  `read_only`. La capacité est donc **requise** et conservée (moindre privilège vérifié empiriquement).
 - **M3** : `mem_limit` ajoutés (moodle 1.5g, db 1g, gate/proxy 256m) pour éviter l'OOM de l'hôte 8 Go.
 - **M1** : le profil seccomp est le profil **Docker par défaut** appliqué explicitement (durcissement
   **neutre**, base à restreindre en production, cf. Annexe D) — le tableau est reformulé en conséquence.

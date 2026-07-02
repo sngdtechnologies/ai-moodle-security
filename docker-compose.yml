@@ -49,7 +49,7 @@ services:
     secrets: [db_password]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
-    cap_add: [CHOWN, SETGID, SETUID]   # minimum MariaDB (DAC_OVERRIDE retire, moindre privilege)
+    cap_add: [CHOWN, SETGID, SETUID, DAC_OVERRIDE]   # DAC_OVERRIDE requis par MariaDB (teste : KO sans)
     mem_limit: 1g
     read_only: true
     tmpfs: [/tmp, /run/mysqld]
