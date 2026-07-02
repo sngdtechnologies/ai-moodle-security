@@ -37,7 +37,10 @@ production ; il n'a pas été nécessaire pour les flux de démonstration.
 
 ## Non-régression
 - Tuteur toujours fonctionnel de bout en bout (~3-4 s à chaud) — le chemin d'inférence est interne
-  (moodle→gate→ollama), non affecté par le WAF (qui inspecte les requêtes entrantes).
+  (moodle→gate→ollama). Le rendu HTML final transite par le proxy ; l'inspection des **réponses**
+  par le CRS est **désactivée** (`SecResponseBodyAccess Off`) pour ne pas scanner/bufferiser la
+  sortie pédagogique du tuteur (code/maths) — sa sûreté est assurée par le niveau N4 (`FORMAT_PLAIN`).
+  Le WAF protège donc les requêtes **entrantes** (attaques applicatives) ; la sortie relève de N4.
 - Confidentialité inchangée : `moodle` et `ollama` = **NO EGRESS**.
 
 ## Note d'implémentation (versions)
