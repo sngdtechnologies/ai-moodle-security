@@ -1,5 +1,5 @@
 # moodle/Dockerfile -- Moodle 4.5 sur base moodlehq PHP-Apache + plugin
-FROM moodlehq/moodle-php-apache:8.2
+FROM moodlehq/moodle-php-apache:8.2@sha256:d265924f93043170ab7c4d4cff49db68667d5bef1df6b3377627cd6b80e758e4
 
 ARG MOODLE_BRANCH=MOODLE_405_STABLE
 # Récupère le code Moodle 4.5 stable.

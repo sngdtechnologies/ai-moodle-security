@@ -1,6 +1,6 @@
 services:
   ollama:
-    image: ollama/ollama:0.5.4
+    image: ollama/ollama:0.5.4@sha256:18bfb1d605604fd53dcad20d0556df4c781e560ebebcd923454d627c994a0e37
     networks: [ai]
     volumes:
       - ollama_models:/root/.ollama
@@ -8,7 +8,7 @@ services:
     # Phase 1 : Ollama a un accès reseau pour tirer le modele.
     # L'isolation stricte (reseau internal) arrive en phase 3.
   ollama-gate:
-    image: caddy:2.8
+    image: caddy:2.8@sha256:226d1f059b75399fe19182893c7184591c07b97afc8dfcf44eeb80c9a77a530f
     networks: [backend, ai]
     volumes:
       - ./gate/Caddyfile:/etc/caddy/Caddyfile:ro
@@ -16,7 +16,7 @@ services:
     entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
     depends_on: [ollama]
   db:
-    image: mariadb:11.4
+    image: mariadb:11.4@sha256:1b46b73d4b629022dfa29e6db3bb0d63b5df714fc3bfbe5057d63d76d8f6054b
     networks: [backend]
     command: >
       --character-set-server=utf8mb4
