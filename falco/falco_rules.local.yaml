@@ -4,7 +4,9 @@
 
 - rule: Ollama - processus inattendu
   desc: Tout processus autre que le binaire ollama dans le conteneur
-  condition: spawned_process and ollama_container and not proc.name in (ollama, runner)
+  # Allowlist calibree a la version deployee (Annexe E : affinage obligatoire) :
+  # 'ollama_llama_se' est le sous-processus d'inference (comm tronque a 15 car.).
+  condition: spawned_process and ollama_container and not proc.name in (ollama, runner, ollama_llama_se)
   output: >
     Processus inattendu dans le conteneur Ollama
     (proc=%proc.name parent=%proc.pname cmd=%proc.cmdline
@@ -23,7 +25,9 @@
 
 - rule: Ollama - connexion sortante interdite
   desc: Ollama est isole ; toute sortie reseau signale une exfiltration
-  condition: outbound and ollama_container and not fd.sip in ("127.0.0.1")
+  # Exception loopback IPv4 ET IPv6 (Annexe E : la resolution DNS locale d'Ollama
+  # cible ::1:53 ; sans ::1 la regle produit un faux positif a chaque requete).
+  condition: outbound and ollama_container and not fd.sip in ("127.0.0.1", "::1")
   output: >
     Connexion sortante depuis le conteneur Ollama
     (destination=%fd.sip:%fd.sport cmd=%proc.cmdline)
