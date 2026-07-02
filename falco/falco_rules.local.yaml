@@ -1,0 +1,31 @@
+# falco_rules.local.yaml -- supervision du conteneur d'inference Ollama (Annexe E).
+- macro: ollama_container
+  condition: container.image.repository contains "ollama"
+
+- rule: Ollama - processus inattendu
+  desc: Tout processus autre que le binaire ollama dans le conteneur
+  condition: spawned_process and ollama_container and not proc.name in (ollama, runner)
+  output: >
+    Processus inattendu dans le conteneur Ollama
+    (proc=%proc.name parent=%proc.pname cmd=%proc.cmdline
+     image=%container.image.repository)
+  priority: WARNING
+  tags: [container, llm, mitre_execution]
+
+- rule: Ollama - interpreteur de commandes
+  desc: Un shell est lance dans le conteneur Ollama (exploitation probable)
+  condition: spawned_process and ollama_container and proc.name in (sh, bash, dash, ash, zsh)
+  output: >
+    Shell ouvert dans le conteneur Ollama
+    (shell=%proc.name parent=%proc.pname cmd=%proc.cmdline)
+  priority: CRITICAL
+  tags: [container, llm, shell]
+
+- rule: Ollama - connexion sortante interdite
+  desc: Ollama est isole ; toute sortie reseau signale une exfiltration
+  condition: outbound and ollama_container and not fd.sip in ("127.0.0.1")
+  output: >
+    Connexion sortante depuis le conteneur Ollama
+    (destination=%fd.sip:%fd.sport cmd=%proc.cmdline)
+  priority: CRITICAL
+  tags: [network, llm, exfiltration]
