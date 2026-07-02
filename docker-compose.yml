@@ -88,12 +88,13 @@ services:
       db: { condition: service_healthy }
       ollama-gate: { condition: service_started }
   proxy:
-    build: ./proxy                       # Caddy relais (Phase 4 : +WAF Coraza +TLS)
+    build: ./proxy                       # Caddy + WAF Coraza (OWASP CRS) + TLS
     networks: [edge, dmz]
-    ports: ["8080:8080"]                 # seul point expose
+    ports: ["443:443"]                   # seul point expose (HTTPS)
     volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]          # bind 443/80 sous cap_drop ALL + no-new-privileges
     read_only: true
     tmpfs: [/tmp, /config, /data]
     mem_limit: 256m
