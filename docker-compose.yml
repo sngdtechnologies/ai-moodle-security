@@ -64,7 +64,7 @@ services:
     build:
       context: .
       dockerfile: moodle/Dockerfile
-    networks: [dmz, backend]             # reseaux internes uniquement (aucun egress)
+    networks: [dmz, backend, iot]        # reseaux internes uniquement (aucun egress)
     user: "33:33"                        # www-data (Tableau 8)
     mem_limit: 1500m                     # evite l'OOM hote sur 8 Go
     environment:
@@ -99,12 +99,22 @@ services:
     tmpfs: [/tmp, /config, /data]
     mem_limit: 256m
     depends_on: [moodle]
+  mosquitto:
+    image: eclipse-mosquitto:2.0@sha256:212f89e1eaeb2c322d6441b64396e3346026674db8fa9c27beac293405c32b3c
+    networks: [iot]                      # isole : aucune visibilite sur Ollama
+    volumes: ["./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 128m
 
 networks:
   edge: {}                      # seul reseau avec acces Internet (proxy public)
   dmz:     { internal: true }   # proxy <-> moodle
   ai:      { internal: true }   # ollama isole : aucune route sortante
   backend: { internal: true }   # moodle/db/gate : aucune route sortante
+  iot:     { internal: true }   # moodle <-> mosquitto (capteurs), isole d'Ollama
 
 volumes:
   ollama_models: {}
