@@ -4,9 +4,10 @@
 	order coraza_waf first
 }
 
-:443 {
+localhost {
+	# Site nomme -> Caddy emet un cert interne pour cet hote (SNI). Demo : acces
+	# par tunnel SSH sur https://localhost. Production : lms.etablissement.cm + PKI.
 	# Repli hors-ligne : autorite interne de Caddy (cert auto-signe).
-	# Production : certificat de la PKI de l'etablissement.
 	tls internal
 
 	coraza_waf {
