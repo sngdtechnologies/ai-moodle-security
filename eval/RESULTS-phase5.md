@@ -53,13 +53,18 @@ mémoire (« isolé au niveau réseau, filtré au niveau schéma, cantonné au c
   ne répond pas au niveau TCP) — corrigé.
 - **M3** : l'indice n'agrège plus que les mesures de type `attention` (auparavant `presence` 0/1 et
   `attention` 0-100 étaient moyennés ensemble, diluant l'indice) — corrigé.
-- **I1 (résidu assumé)** : Moodle rejoignant `iot` (nécessaire pour que la tâche joigne le courtier,
-  conforme au Tableau 7 du mémoire), son interface HTTP `moodle:8080` devient joignable depuis `iot`
-  — un capteur compromis pourrait attaquer l'application Moodle **directement, sans passer par le
-  WAF** (qui ne siège qu'au proxy). Le **confinement d'Ollama reste intact** (Docker ne route pas
-  entre réseaux ; `mosquitto` n'est pas sur `ai`). Mitigation de production : restreindre l'inbound
-  `iot→moodle:8080` par un pare-feu hôte / une politique réseau (Moodle n'a besoin que du flux
-  sortant vers `mosquitto:1883`). Documenté comme résidu du volet circonscrit.
+- **I1 (angle mort du mémoire, PAS un risque assumé par l'auteur)** : Moodle rejoignant `iot`
+  (topologie fidèle au Tableau 7, nécessaire pour que la tâche joigne le courtier), son interface
+  HTTP `moodle:8080` devient joignable depuis `iot` — un capteur compromis pourrait attaquer
+  l'application Moodle **directement, sans passer par le WAF** (qui ne siège qu'au proxy).
+  **Important — portée exacte vis-à-vis du mémoire** : le §5.6 ne revendique pour un capteur
+  compromis que deux propriétés — « ni injecter d'instruction, ni atteindre Ollama » — toutes deux
+  **vérifiées** ici. Le vecteur capteur→application-Moodle **n'est PAS traité par le mémoire** ;
+  c'est un résidu révélé par la revue, non une garantie annoncée puis assumée. Le confinement
+  d'Ollama reste intact (Docker ne route pas entre réseaux ; `mosquitto` n'est pas sur `ai`).
+  Mitigation de production (hors périmètre du prototype et du mémoire) : restreindre l'inbound
+  `iot→moodle:8080` par un pare-feu hôte / une politique réseau — Moodle n'a besoin que du flux
+  sortant vers `mosquitto:1883`.
 - **M2 (assumé)** : `allow_anonymous true` sans ACL sur le réseau `iot` isolé — un capteur peut
   usurper un topic ; c'est précisément le modèle de menace neutralisé par la médiation côté schéma.
 
