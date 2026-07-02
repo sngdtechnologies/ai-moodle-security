@@ -9,19 +9,17 @@
 - macro: ollama_container
   condition: container.image.repository contains "ollama"
 
-# Interpreteurs de commandes (liste elargie) : partagee par les deux regles pour
-# les rendre MUTUELLEMENT EXCLUSIVES (un shell -> CRITICAL uniquement ; un autre
-# processus inattendu -> WARNING uniquement). Ainsi la CRITICAL se declenche meme
-# avec la config Falco par defaut (rule_matching: first), sans reglage hote.
-- macro: shell_binaries
-  condition: proc.name in (sh, bash, dash, ash, zsh, ksh, csh, tcsh, fish, busybox)
+# Les deux regles sont MUTUELLEMENT EXCLUSIVES (un shell -> CRITICAL uniquement ; un
+# autre processus inattendu -> WARNING uniquement) : la CRITICAL se declenche donc meme
+# avec la config Falco par defaut (rule_matching: first), sans reglage hote. Les listes
+# sont inlinees (l'expansion d'une macro 'not' casse la precedence de 'in (...)').
 
 - rule: Ollama - processus inattendu
   desc: Tout processus non attendu (hors shell) dans le conteneur Ollama
-  # Allowlist calibree a la version deployee : 'ollama_llama_se' = sous-processus
-  # d'inference (comm tronque a 15 car.). 'runner' retire (non observe = nom
-  # d'usurpation gratuit). Les shells sont exclus ici (traites en CRITICAL ci-dessous).
-  condition: spawned_process and ollama_container and not proc.name in (ollama, ollama_llama_se) and not shell_binaries
+  # Exclusion = allowlist legitime + les shells (traites en CRITICAL ci-dessous).
+  # 'ollama_llama_se' = sous-processus d'inference (comm tronque a 15 car.).
+  # 'runner' retire (non observe = nom d'usurpation gratuit).
+  condition: spawned_process and ollama_container and not proc.name in (ollama, ollama_llama_se, sh, bash, dash, ash, zsh, ksh, csh, tcsh, fish, busybox)
   output: >
     Processus inattendu dans le conteneur Ollama
     (proc=%proc.name exe=%proc.exepath parent=%proc.pname cmd=%proc.cmdline
@@ -31,7 +29,7 @@
 
 - rule: Ollama - interpreteur de commandes
   desc: Un shell est lance dans le conteneur Ollama (exploitation probable)
-  condition: spawned_process and ollama_container and shell_binaries
+  condition: spawned_process and ollama_container and proc.name in (sh, bash, dash, ash, zsh, ksh, csh, tcsh, fish, busybox)
   output: >
     Shell ouvert dans le conteneur Ollama
     (shell=%proc.name exe=%proc.exepath parent=%proc.pname cmd=%proc.cmdline)
