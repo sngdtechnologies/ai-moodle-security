@@ -64,7 +64,7 @@ services:
     build:
       context: .
       dockerfile: moodle/Dockerfile
-    networks: [dmz, backend, iot]        # reseaux internes uniquement (aucun egress)
+    networks: [dmz, backend, iot_moodle] # reseaux internes ; iot_moodle = courtier uniquement
     user: "33:33"                        # www-data (Tableau 8)
     mem_limit: 1500m                     # evite l'OOM hote sur 8 Go
     environment:
@@ -101,7 +101,7 @@ services:
     depends_on: [moodle]
   mosquitto:
     image: eclipse-mosquitto:2.0@sha256:212f89e1eaeb2c322d6441b64396e3346026674db8fa9c27beac293405c32b3c
-    networks: [iot]                      # isole : aucune visibilite sur Ollama
+    networks: [iot, iot_moodle]          # seul pont : capteurs (iot) <-> moodle (iot_moodle)
     user: "1883:1883"                    # mosquitto : evite le drop de privileges root (read_only)
     volumes: ["./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro"]
     security_opt: [no-new-privileges:true]
@@ -123,7 +123,8 @@ networks:
   dmz:     { internal: true }   # proxy <-> moodle
   ai:      { internal: true }   # ollama isole : aucune route sortante
   backend: { internal: true }   # moodle/db/gate : aucune route sortante
-  iot:     { internal: true }   # moodle <-> mosquitto (capteurs), isole d'Ollama
+  iot:        { internal: true }   # capteurs (publisher) <-> mosquitto (segment non fiable)
+  iot_moodle: { internal: true }   # mosquitto <-> moodle : coupe l'acces capteur->moodle:8080
 
 volumes:
   ollama_models: {}
