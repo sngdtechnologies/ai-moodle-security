@@ -52,42 +52,54 @@ function attack_succeeded(string $category, string $out): array {
 }
 
 $lines = array_filter(array_map('trim', file($promptsfile)));
+$prompts = [];
 $percat = [];
-$results = [];
-$client = new \aiprovider_ollamasecure\client();
-
 foreach ($lines as $ln) {
     $p = json_decode($ln, true);
     if (!$p) continue;
     $cat = $p['category'];
     $percat[$cat] = ($percat[$cat] ?? 0) + 1;
     if ($limit && $percat[$cat] > $limit) continue;
+    $prompts[] = $p;
+}
 
-    $content = $p['content'] ?? '';
-    $rowres = ['id'=>$p['id'], 'category'=>$cat, 'prompt'=>$p['prompt']];
+// Indexe les resultats par id pour fusionner les deux passes.
+$byid = [];
+foreach ($prompts as $p) {
+    $byid[$p['id']] = ['id'=>$p['id'], 'category'=>$p['category'], 'prompt'=>$p['prompt']];
+}
 
-    if ($mode === 'nu' || $mode === 'both') {
-        // NU : concatenation brute prompt + contenu tiers, sans canaux.
-        $r = ask_nu($GATE, $token, trim($p['prompt']."\n".$content));
-        $s = attack_succeeded($cat, $r['out']);
-        $rowres['nu'] = ['blocked'=>!$s['succeeded'], 'http'=>$r['http'], 'dt'=>$r['dt'],
-                         'review'=>$s['review'], 'out'=>$r['out']];
+// IMPORTANT (perf 8 Go) : deux PASSES separees pour ne charger chaque modele
+// qu'une fois (eviter le thrashing phi3:mini <-> tuteur-secure a chaque prompt).
+if ($mode === 'nu' || $mode === 'both') {
+    fwrite(STDERR, "== passe NU (phi3:mini) ==\n");
+    foreach ($prompts as $p) {
+        $content = $p['content'] ?? '';
+        $r = ask_nu($GATE, $token, trim($p['prompt']."\n".$content)); // sans canaux
+        $s = attack_succeeded($p['category'], $r['out']);
+        $byid[$p['id']]['nu'] = ['blocked'=>!$s['succeeded'], 'http'=>$r['http'], 'dt'=>$r['dt'],
+                                 'review'=>$s['review'], 'out'=>$r['out']];
+        fwrite(STDERR, "  nu id {$p['id']} ({$p['category']}) {$r['dt']}s\n");
     }
-    if ($mode === 'secured' || $mode === 'both') {
+}
+if ($mode === 'secured' || $mode === 'both') {
+    fwrite(STDERR, "== passe SECURISE (tuteur-secure) ==\n");
+    $client = new \aiprovider_ollamasecure\client();
+    foreach ($prompts as $p) {
+        $content = $p['content'] ?? '';
         $t0 = microtime(true);
-        $out = $client->ask($p['prompt'], 2, $content); // pipeline N1-N4, modele tuteur-secure
+        $out = $client->ask($p['prompt'], 2, $content); // pipeline N1-N4
         $dt = round(microtime(true)-$t0,1);
-        $s = attack_succeeded($cat, $out);
-        // Reponse de blocage/indispo du plugin = attaque neutralisee cote dispositif.
+        $s = attack_succeeded($p['category'], $out);
         $pluginblock = ($out === get_string('blocked','aiprovider_ollamasecure'));
         $unavailable = ($out === get_string('aiunavailable','aiprovider_ollamasecure'));
-        $rowres['secured'] = ['blocked'=>($pluginblock || !$s['succeeded']), 'dt'=>$dt,
-                              'pluginblock'=>$pluginblock, 'unavailable'=>$unavailable,
-                              'review'=>$s['review'], 'out'=>$out];
+        $byid[$p['id']]['secured'] = ['blocked'=>($pluginblock || !$s['succeeded']), 'dt'=>$dt,
+                                      'pluginblock'=>$pluginblock, 'unavailable'=>$unavailable,
+                                      'review'=>$s['review'], 'out'=>$out];
+        fwrite(STDERR, "  secure id {$p['id']} ({$p['category']}) {$dt}s\n");
     }
-    $results[] = $rowres;
-    fwrite(STDERR, "id {$p['id']} ($cat) ok\n"); // progression
 }
+$results = array_values($byid);
 
 // --- synthese : taux de blocage par categorie et global.
 function rate(array $results, string $cond): array {
