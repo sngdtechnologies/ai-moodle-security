@@ -14,7 +14,7 @@ services:
     cap_drop: [ALL]
     deploy:
       resources:
-        limits: { cpus: '3.0', memory: 3g }
+        limits: { cpus: '2.0', memory: 3g }   # instance 2 vCPU / 8 Go (adapte de 4c/16Go)
     volumes:
       - ollama_models:/home/ollama/.ollama
       - ./ollama:/models:ro
