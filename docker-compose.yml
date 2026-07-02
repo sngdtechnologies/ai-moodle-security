@@ -61,15 +61,23 @@ services:
       context: .
       dockerfile: moodle/Dockerfile
     networks: [backend]
-    # L'image moodlehq/moodle-php-apache sert sur le port 80 interne.
-    ports: ["8080:80"]
+    ports: ["8080:8080"]                 # Apache sur 8080 interne (non-root)
+    user: "33:33"                        # www-data (Tableau 8)
     environment:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
-      # Requis par l'image de base : DocumentRoot = $APACHE_DOCUMENT_ROOT.
       - APACHE_DOCUMENT_ROOT=/var/www/html
     # ollama_token : lu par cli/configure_ai.php pour l'injecter dans la config
     # du plugin (le client appelle la passerelle avec ce jeton porteur).
     secrets: [db_password, moodle_admin_pass, ollama_token]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/apache2
+      - /var/lock/apache2
+      - /var/log/apache2
+      - /var/lib/php/sessions
     volumes:
       - moodledata:/var/www/moodledata
     depends_on:
