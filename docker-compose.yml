@@ -1,22 +1,41 @@
 services:
   ollama:
-    image: ollama/ollama:0.5.4
+    image: ollama/ollama:0.5.4@sha256:18bfb1d605604fd53dcad20d0556df4c781e560ebebcd923454d627c994a0e37
     networks: [ai]
+    user: "1000:1000"                    # non-root (Tableau 8)
+    environment:
+      - HOME=/home/ollama                # -> OLLAMA_MODELS=/home/ollama/.ollama/models
+      - OLLAMA_NUM_PARALLEL=1            # 8 Go : 1 slot (KV-cache limite)
+      - OLLAMA_MAX_QUEUE=64             # back-pressure -> 503 au-dela
+      - OLLAMA_KEEP_ALIVE=24h          # garde le modele chaud (evite recharges)
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./ollama/seccomp-ollama.json
+    cap_drop: [ALL]
+    read_only: true                      # rootfs en lecture seule (surface d'entree non fiable)
+    tmpfs: [/tmp]                        # (Compose n'expose pas noexec ; cf. RESULTS-phase3)
+    deploy:
+      resources:
+        limits: { cpus: '2.0', memory: 3g }   # instance 2 vCPU / 8 Go (adapte de 4c/16Go)
     volumes:
-      - ollama_models:/root/.ollama
+      - ollama_models:/home/ollama/.ollama
       - ./ollama:/models:ro
-    # Phase 1 : Ollama a un accès reseau pour tirer le modele.
-    # L'isolation stricte (reseau internal) arrive en phase 3.
+    # Reseau ouvert en Task 2-5 (pull du modele) ; internal:true en Task 6.
   ollama-gate:
-    image: caddy:2.8
+    build: ./gate                        # Caddy durci (fscap retiree pour no-new-privileges)
     networks: [backend, ai]
     volumes:
       - ./gate/Caddyfile:/etc/caddy/Caddyfile:ro
     secrets: [ollama_token]
     entrypoint: ["/bin/sh", "-c", "export OLLAMA_TOKEN=$(cat /run/secrets/ollama_token | tr -d '\\r\\n') && exec caddy run --config /etc/caddy/Caddyfile"]
     depends_on: [ollama]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp, /config, /data]
+    mem_limit: 256m
   db:
-    image: mariadb:11.4
+    image: mariadb:11.4@sha256:1b46b73d4b629022dfa29e6db3bb0d63b5df714fc3bfbe5057d63d76d8f6054b
     networks: [backend]
     command: >
       --character-set-server=utf8mb4
@@ -28,6 +47,12 @@ services:
       - MARIADB_PASSWORD_FILE=/run/secrets/db_password
       - MARIADB_RANDOM_ROOT_PASSWORD=1
     secrets: [db_password]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID, DAC_OVERRIDE]   # DAC_OVERRIDE requis par MariaDB (teste : KO sans)
+    mem_limit: 1g
+    read_only: true
+    tmpfs: [/tmp, /run/mysqld]
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -39,25 +64,46 @@ services:
     build:
       context: .
       dockerfile: moodle/Dockerfile
-    networks: [backend]
-    # L'image moodlehq/moodle-php-apache sert sur le port 80 interne.
-    ports: ["8080:80"]
+    networks: [dmz, backend]             # reseaux internes uniquement (aucun egress)
+    user: "33:33"                        # www-data (Tableau 8)
+    mem_limit: 1500m                     # evite l'OOM hote sur 8 Go
     environment:
       - MOODLE_WWWROOT=${MOODLE_WWWROOT}
-      # Requis par l'image de base : DocumentRoot = $APACHE_DOCUMENT_ROOT.
       - APACHE_DOCUMENT_ROOT=/var/www/html
     # ollama_token : lu par cli/configure_ai.php pour l'injecter dans la config
     # du plugin (le client appelle la passerelle avec ce jeton porteur).
     secrets: [db_password, moodle_admin_pass, ollama_token]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/apache2
+      - /var/lock/apache2
+      - /var/log/apache2
+      - /var/lib/php/sessions
     volumes:
       - moodledata:/var/www/moodledata
     depends_on:
       db: { condition: service_healthy }
       ollama-gate: { condition: service_started }
+  proxy:
+    build: ./proxy                       # Caddy relais (Phase 4 : +WAF Coraza +TLS)
+    networks: [edge, dmz]
+    ports: ["8080:8080"]                 # seul point expose
+    volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp, /config, /data]
+    mem_limit: 256m
+    depends_on: [moodle]
 
 networks:
-  ai: {}
-  backend: {}
+  edge: {}                      # seul reseau avec acces Internet (proxy public)
+  dmz:     { internal: true }   # proxy <-> moodle
+  ai:      { internal: true }   # ollama isole : aucune route sortante
+  backend: { internal: true }   # moodle/db/gate : aucune route sortante
 
 volumes:
   ollama_models: {}
