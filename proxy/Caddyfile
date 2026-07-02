@@ -1,6 +1,23 @@
-# proxy/Caddyfile -- Phase 3 : proxy public minimal (relais HTTP simple).
+# proxy/Caddyfile -- proxy public : TLS interne + WAF Coraza (OWASP CRS).
 # Seul point expose ; Moodle reste sur des reseaux internes (aucun egress).
-# Phase 4 : ajout de TLS + WAF Coraza (OWASP CRS) devant ce reverse_proxy.
-:8080 {
+{
+	order coraza_waf first
+}
+
+:443 {
+	# Repli hors-ligne : autorite interne de Caddy (cert auto-signe).
+	# Production : certificat de la PKI de l'etablissement.
+	tls internal
+
+	coraza_waf {
+		load_owasp_crs
+		directives `
+			Include @coraza.conf-recommended
+			Include @crs-setup.conf.example
+			Include @owasp_crs/*.conf
+			SecRuleEngine On
+		`
+	}
+
 	reverse_proxy moodle:8080
 }
