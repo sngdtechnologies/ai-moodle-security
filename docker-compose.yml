@@ -90,7 +90,7 @@ services:
   proxy:
     build: ./proxy                       # Caddy + WAF Coraza (OWASP CRS) + TLS
     networks: [edge, dmz]
-    ports: ["443:443", "80:80"]          # seul point expose (HTTPS + redirection)
+    ports: ["443:443"]                   # seul point expose (HTTPS)
     volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
