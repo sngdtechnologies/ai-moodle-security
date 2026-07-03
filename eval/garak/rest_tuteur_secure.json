@@ -1,0 +1,21 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "tuteur-secure (via ollama-gate)",
+      "uri": "http://ollama-gate:11434/api/generate",
+      "method": "post",
+      "headers": {
+        "Authorization": "Bearer __OLLAMA_TOKEN__",
+        "Content-Type": "application/json"
+      },
+      "req_template_json_object": {
+        "model": "tuteur-secure",
+        "prompt": "$INPUT",
+        "stream": false
+      },
+      "response_json": true,
+      "response_json_field": "response",
+      "request_timeout": 150
+    }
+  }
+}
