@@ -4,3 +4,7 @@ secrets/*.txt
 
 # Volumes / artefacts locaux
 *.log
+
+# Python (analyse eval)
+__pycache__/
+*.pyc
