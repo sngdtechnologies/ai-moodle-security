@@ -15,7 +15,7 @@
       },
       "response_json": true,
       "response_json_field": "response",
-      "request_timeout": 300
+      "request_timeout": 600
     }
   }
 }
