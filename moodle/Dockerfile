@@ -29,6 +29,16 @@ RUN chmod +x /usr/local/bin/moodle-entrypoint.sh && \
 RUN sed -ri 's/\bListen 80\b/Listen 8080/' /etc/apache2/ports.conf; \
     sed -ri 's/:80>/:8080>/' /etc/apache2/sites-enabled/*.conf 2>/dev/null; true
 
+# Logs Apache -> stdout/stderr (visibles par `docker compose logs` / journald) au lieu de fichiers
+# sur tmpfs (invisibles depuis l'hote et non bornes en RAM). C'est aussi ce qui rend visible
+# l'error_log() du plugin (alertes N1/N3). Le journal d'acces omet la query string, qui contient le
+# sesskey : journalisation minimisee.
+RUN printf '%s\n' 'LogFormat "%h xff=%{X-Forwarded-For}i %t \"%m %U\" %>s %O %Dus" aimoodle' \
+      > /etc/apache2/conf-available/aimoodle-log.conf && a2enconf aimoodle-log && \
+    sed -ri 's#ErrorLog \$\{APACHE_LOG_DIR\}/error\.log#ErrorLog /proc/self/fd/2#; s#CustomLog \$\{APACHE_LOG_DIR\}/access\.log combined#CustomLog /proc/self/fd/1 aimoodle#' \
+      /etc/apache2/apache2.conf /etc/apache2/sites-enabled/000-default.conf && \
+    apache2ctl -t
+
 # Restaure le WORKDIR attendu (on l'avait mis a / pour le clone).
 WORKDIR /var/www/html
 

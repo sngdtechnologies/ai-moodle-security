@@ -1,5 +1,12 @@
 # gate/Caddyfile -- passerelle d'authentification devant Ollama
 :11434 {
+    # Journal d'acces (stdout -> docker/journald) : statut, duree, IP source de chaque requete,
+    # dont les refus 401 (mauvais jeton). Caddy masque l'en-tete Authorization par defaut ;
+    # les corps de requete (prompts) ne sont jamais journalises.
+    log {
+        output stdout
+        format json
+    }
     @authorized header Authorization "Bearer {$OLLAMA_TOKEN}"
     handle @authorized {
         reverse_proxy http://ollama:11434
