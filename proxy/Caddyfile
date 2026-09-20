@@ -15,7 +15,16 @@
 		directives `
 			Include @coraza.conf-recommended
 			Include @crs-setup.conf.example
+			# --- Calibration Moodle : 2 faux positifs observes (cf. docs/RUNBOOK-SOUTENANCE.md) ---
+			# 920420 (type de contenu) : certains appels AJAX de Moodle arrivent en text/plain.
+			# Desactivee UNIQUEMENT pour /lib/ajax/service.php ; partout ailleurs elle reste active.
+			# (Doit preceder l'inclusion du CRS pour que le ctl: s'applique.)
+			SecRule REQUEST_URI "@beginsWith /lib/ajax/service.php" "id:1000010,phase:1,pass,nolog,ctl:ruleRemoveById=920420"
 			Include @owasp_crs/*.conf
+			# 932260 (commande Unix) : "groupmod" matche le NOM des champs Moodle groupmode et
+			# groupmodeforce (formulaires d'activite et de cours). On retire seulement la cible
+			# ARGS_NAMES pour ces noms : les VALEURS des parametres restent inspectees.
+			SecRuleUpdateTargetById 932260 "!ARGS_NAMES:/^groupmode/"
 			SecRuleEngine On
 			# Inspection des REPONSES desactivee : la sortie du tuteur (code/maths
 			# pedagogiques) ne doit pas etre scannee/bufferisee par le CRS ; sa
