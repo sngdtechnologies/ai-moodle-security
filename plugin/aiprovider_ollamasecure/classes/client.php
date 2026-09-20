@@ -46,7 +46,7 @@ class client {
                 return get_string('aiunavailable', 'aiprovider_ollamasecure');
             }
             if (trim($out) !== '') {
-                return $this->sanitize_output($out);
+                return $this->sanitize_output($out, $userid);
             }
         }
         $this->log_alert('empty_generation', $userid);
@@ -74,11 +74,29 @@ class client {
             return null;
         }
         $decoded = json_decode($raw, true);
-        return is_array($decoded) ? ($decoded['response'] ?? '') : '';
+        if (!is_array($decoded)) {
+            return '';
+        }
+        $text = $decoded['response'] ?? '';
+        // Plafond num_predict atteint (cf. ollama/Modelfile) : la reponse est coupee
+        // net. On la ramene a la derniere phrase complete plutot que de l'afficher
+        // tronquee en milieu de phrase.
+        if (($decoded['done_reason'] ?? '') === 'length') {
+            $text = $this->trim_to_last_sentence($text);
+        }
+        return $text;
     }
-    /** Niveaux 3 & 4 : detection de fuite puis rendu sur par Moodle.
-      * FORMAT_PLAIN echappe tout HTML (anti-XSS). */
-    private function sanitize_output(string $o): string {
+    /** Ramene un texte coupe par le plafond de tokens a sa derniere phrase complete.
+      * Sans aucune fin de phrase, rend le texte tel quel (mieux que rien). */
+    private function trim_to_last_sentence(string $t): string {
+        if (!preg_match('/^.*[.!?…](?=\s|$)/su', $t, $m)) {
+            return $t;
+        }
+        // Un "2." en fin de coupe est un numero de liste, pas une fin de phrase.
+        return rtrim(preg_replace('/\s*\n\s*\d+[.)]\s*$/u', '', $m[0]));
+    }
+    /** Niveaux 3 & 4 : detection de fuite puis echappement HTML (anti-XSS). */
+    private function sanitize_output(string $o, int $userid = 0): string {
         // Canaries = fragments DISTINCTIFS de la consigne systeme (verbatim OU
         // paraphrase). On NE matche PAS les delimiteurs [INSTRUCTION]/[DONNEES]
         // (encadrent chaque entree -> faux positifs). Un fragment isole pouvant
@@ -98,14 +116,24 @@ class client {
             }
         }
         if ($hits >= 2) {
-            $this->log_alert('possible_prompt_leak', 0);
+            $this->log_alert('possible_prompt_leak', $userid);
             return get_string('blocked', 'aiprovider_ollamasecure');
         }
-        return format_text($o, FORMAT_PLAIN, ['filter' => false]);
+        // N4 : on echappe & < > (anti-XSS) mais on n'emet AUCUNE balise. L'ancien
+        // format_text(FORMAT_PLAIN) transformait chaque saut de ligne en <br />, ce que Moodle
+        // rejette ("Invalid response value detected") car generatedcontent est de type PARAM_TEXT :
+        // toute reponse de plus d'un paragraphe echouait dans l'interface. Le JS de l'editeur
+        // attend du texte brut avec des \n et les convertit lui-meme en <br>/<p>. Le texte est
+        // ensuite insere en HTML brut ({{{editedtext}}}) dans un noeud texte : l'echappement
+        // reste donc indispensable. Les guillemets n'ont pas besoin de l'etre (pas d'attribut).
+        return htmlspecialchars($o, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
     /** Journalisation minimisée (loi 2024/017) : catégorie + user pseudonymisé. */
     private function log_alert(string $event, int $userid, string $detail = ''): void {
         $hashed = $userid ? hash('sha256', $userid . get_site_identifier()) : 'anon';
-        debugging("ollamasecure[$event] user=$hashed $detail", DEBUG_NORMAL);
+        // error_log() et non debugging() : ce dernier est muet au niveau de debug par defaut, donc
+        // aucune alerte n'etait visible. Ici la ligne part sur la sortie d'erreur d'Apache,
+        // redirigee vers les logs du conteneur (cf. moodle/Dockerfile).
+        error_log("ollamasecure[$event] user=$hashed $detail");
     }
 }
