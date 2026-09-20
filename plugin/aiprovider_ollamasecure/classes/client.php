@@ -35,9 +35,27 @@ class client {
             return get_string('blocked', 'aiprovider_ollamasecure');
         }
         $token = get_config('aiprovider_ollamasecure', 'ollama_token');
-        $payload = json_encode(['model' => self::MODEL,
-            'prompt' => $this->build_prompt($instruction, $contenu),
-            'stream' => false]);
+        $prompt = $this->build_prompt($instruction, $contenu);
+        // phi3:mini (petit modele) renvoie parfois 0 token : on reessaie une fois
+        // sur reponse vide (une generation vide revient vite, cout negligeable),
+        // puis on rend un message gracieux plutot qu'une chaine vide (sinon le
+        // placement editeur affiche "Something went wrong").
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $out = $this->call_model($token, $prompt, $userid);
+            if ($out === null) {
+                return get_string('aiunavailable', 'aiprovider_ollamasecure');
+            }
+            if (trim($out) !== '') {
+                return $this->sanitize_output($out);
+            }
+        }
+        $this->log_alert('empty_generation', $userid);
+        return get_string('emptyresponse', 'aiprovider_ollamasecure');
+    }
+    /** Appel HTTP a la passerelle. Retourne le texte du modele (eventuellement
+      * vide), ou null en cas d'erreur de transport / statut HTTP non 2xx. */
+    private function call_model(string $token, string $prompt, int $userid): ?string {
+        $payload = json_encode(['model' => self::MODEL, 'prompt' => $prompt, 'stream' => false]);
         $ch = curl_init(self::ENDPOINT);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -53,11 +71,10 @@ class client {
         // on ne doit pas avaler un echec d'auth en renvoyant une reponse vide.
         if ($errno !== 0 || $raw === false || $httpcode < 200 || $httpcode >= 300) {
             $this->log_alert('ollama_unreachable', $userid, 'errno=' . $errno . ' http=' . $httpcode);
-            return get_string('aiunavailable', 'aiprovider_ollamasecure');
+            return null;
         }
         $decoded = json_decode($raw, true);
-        $out = is_array($decoded) ? ($decoded['response'] ?? '') : '';
-        return $this->sanitize_output($out);
+        return is_array($decoded) ? ($decoded['response'] ?? '') : '';
     }
     /** Niveaux 3 & 4 : detection de fuite puis rendu sur par Moodle.
       * FORMAT_PLAIN echappe tout HTML (anti-XSS). */

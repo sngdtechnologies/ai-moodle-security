@@ -4,7 +4,7 @@
 	order coraza_waf first
 }
 
-localhost {
+{$PROXY_HOST:localhost} {
 	# Site nomme -> Caddy emet un cert interne pour cet hote (SNI). Demo : acces
 	# par tunnel SSH sur https://localhost. Production : lms.etablissement.cm + PKI.
 	# Repli hors-ligne : autorite interne de Caddy (cert auto-signe).

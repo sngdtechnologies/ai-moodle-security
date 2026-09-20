@@ -9,9 +9,10 @@ $token = trim(file_get_contents('/run/secrets/ollama_token'));
 set_config('ollama_token', $token, 'aiprovider_ollamasecure');
 
 // 2) Activer le fournisseur ET le placement editeur via les vraies API 4.5.
-\core\plugininfo\aiprovider::enable_plugin('aiprovider_ollamasecure', 1);
-\core\plugininfo\aiplacement::enable_plugin('aiplacement_editor', 1);
-cli_writeln('Fournisseur aiprovider_ollamasecure et placement editor actives.');
+// enable_plugin attend le nom COURT du plugin (sans le prefixe de type).
+\core\plugininfo\aiprovider::enable_plugin('ollamasecure', 1);
+\core\plugininfo\aiplacement::enable_plugin('editor', 1);
+cli_writeln('Fournisseur ollamasecure et placement editor actives.');
 
 // 3) Purger les caches.
 purge_all_caches();

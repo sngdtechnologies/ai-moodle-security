@@ -1,5 +1,12 @@
+x-defaults: &defaults
+  restart: unless-stopped              # relance auto apres reboot de l'hote (sinon stack eteinte)
+  logging:                             # rotation json-file : evite de saturer le disque de l'EC2
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
 services:
   ollama:
+    <<: *defaults
     image: ollama/ollama:0.5.4@sha256:18bfb1d605604fd53dcad20d0556df4c781e560ebebcd923454d627c994a0e37
     networks: [ai]
     user: "1000:1000"                    # non-root (Tableau 8)
@@ -22,6 +29,7 @@ services:
       - ./ollama:/models:ro
     # Reseau ouvert en Task 2-5 (pull du modele) ; internal:true en Task 6.
   ollama-gate:
+    <<: *defaults
     build: ./gate                        # Caddy durci (fscap retiree pour no-new-privileges)
     networks: [backend, ai]
     volumes:
@@ -35,6 +43,7 @@ services:
     tmpfs: [/tmp, /config, /data]
     mem_limit: 256m
   db:
+    <<: *defaults
     image: mariadb:11.4@sha256:1b46b73d4b629022dfa29e6db3bb0d63b5df714fc3bfbe5057d63d76d8f6054b
     networks: [backend]
     command: >
@@ -61,6 +70,7 @@ services:
       timeout: 5s
       retries: 10
   moodle:
+    <<: *defaults
     build:
       context: .
       dockerfile: moodle/Dockerfile
@@ -88,9 +98,12 @@ services:
       db: { condition: service_healthy }
       ollama-gate: { condition: service_started }
   proxy:
-    build: ./proxy                       # Caddy + WAF Coraza (OWASP CRS) + TLS
+    <<: *defaults
+    build: ./proxy                      # Caddy + WAF Coraza (OWASP CRS) + TLS
     networks: [edge, dmz]
     ports: ["443:443"]                   # seul point expose (HTTPS)
+    environment:
+      - PROXY_HOST=${PROXY_HOST:-localhost}   # hote servi par Caddy (SNI/cert interne)
     volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
@@ -100,6 +113,7 @@ services:
     mem_limit: 256m
     depends_on: [moodle]
   mosquitto:
+    <<: *defaults
     image: eclipse-mosquitto:2.0@sha256:212f89e1eaeb2c322d6441b64396e3346026674db8fa9c27beac293405c32b3c
     networks: [iot, iot_moodle]          # seul pont : capteurs (iot) <-> moodle (iot_moodle)
     user: "1883:1883"                    # mosquitto : evite le drop de privileges root (read_only)
@@ -110,6 +124,7 @@ services:
     tmpfs: [/tmp]
     mem_limit: 128m
   publisher:
+    <<: *defaults
     build: { context: ., dockerfile: iot/publisher/Dockerfile }
     networks: [iot]
     security_opt: [no-new-privileges:true]
