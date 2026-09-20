@@ -1,8 +1,11 @@
 x-defaults: &defaults
   restart: unless-stopped              # relance auto apres reboot de l'hote (sinon stack eteinte)
-  logging:                             # rotation json-file : evite de saturer le disque de l'EC2
-    driver: json-file
-    options: { max-size: "10m", max-file: "3" }
+  # Logs centralises dans journald : un seul journal horodate avec Falco, SSH et la tache cron IoT
+  # (cf. ops/logs.sh). Conserve l'historique meme quand un conteneur est recree, contrairement a
+  # json-file. Taille bornee cote hote par ops/setup-host.sh (SystemMaxUse).
+  logging:
+    driver: journald
+    options: { tag: "{{.Name}}" }      # identifiant journald = nom du conteneur (aimoodle-proxy-1...)
 
 services:
   ollama:

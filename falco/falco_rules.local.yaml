@@ -6,8 +6,11 @@
 # par proc.exepath/hash releve de la mise en production. L'allowlist est reduite au strict
 # necessaire observe (binaire ollama + sous-processus d'inference) pour limiter cette surface.
 
+# Image d'inference EXACTE. L'ancien "contains ollama" matchait aussi l'image de la passerelle
+# (aimoodle-ollama-gate) : son demarrage legitime (sh -c export OLLAMA_TOKEN=...) levait un faux
+# CRITICAL "Shell ouvert" a chaque (re)creation du conteneur (faux positif observe le 2026-09-20).
 - macro: ollama_container
-  condition: container.image.repository contains "ollama"
+  condition: container.image.repository = "ollama/ollama"
 
 # Les deux regles sont MUTUELLEMENT EXCLUSIVES (un shell -> CRITICAL uniquement ; un
 # autre processus inattendu -> WARNING uniquement) : la CRITICAL se declenche donc meme
