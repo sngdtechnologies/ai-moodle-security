@@ -26,5 +26,8 @@ php admin/cli/upgrade.php --non-interactive --allow-unstable || true
 # Configure le fournisseur IA (idempotent).
 php cli/configure_ai.php || echo "[entrypoint] configuration IA à finaliser manuellement"
 
+# Chemins systeme (PHP CLI pour le cron et "Run now") + taches exigeant Internet (idempotent).
+php cli/configure_system.php || echo "[entrypoint] configuration système à finaliser manuellement"
+
 # Lance Apache au premier plan.
 exec apache2-foreground

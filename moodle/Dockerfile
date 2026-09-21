@@ -22,6 +22,8 @@ COPY moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh
 # Script de configuration IA (invoqué par l'entrypoint via cli/configure_ai.php).
 RUN mkdir -p /var/www/html/cli
 COPY moodle/cli/configure_ai.php /var/www/html/cli/configure_ai.php
+# Chemins systeme (PHP CLI, du) et taches exigeant Internet : idem, invoque par l'entrypoint.
+COPY moodle/cli/configure_system.php /var/www/html/cli/configure_system.php
 RUN chmod +x /usr/local/bin/moodle-entrypoint.sh && \
     mkdir -p /var/www/moodledata && chown -R www-data:www-data /var/www
 

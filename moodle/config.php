@@ -15,4 +15,9 @@ $CFG->sslproxy  = 1; // TLS termine par le proxy Caddy ; trafic proxy->moodle en
 $CFG->dataroot  = '/var/www/moodledata';
 $CFG->admin     = 'admin';
 $CFG->directorypermissions = 02777;
+// Ni serveur mail ni sortie reseau (isolation) : on desactive l'envoi de courriels plutot que de
+// laisser chaque tache du cron (notifications du forum, echecs de connexion...) echouer avec
+// "sendmail not found" puis etre rejouee en boucle. Un courriel sortant serait de toute facon un
+// canal d'exfiltration contraire a l'isolation reseau.
+$CFG->noemailever = true;
 require_once(__DIR__ . '/lib/setup.php');
