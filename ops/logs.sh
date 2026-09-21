@@ -10,7 +10,8 @@
 #   ia      [duree]   generations Ollama (statut, duree) + journal des appels IA de Moodle
 #   plugin  [duree]   alertes du plugin (entree invalide, fuite de consigne N3, Ollama injoignable)
 #   falco   [duree]   alertes Falco sur le conteneur Ollama
-#   iot     [duree]   tache IoT (cron) + messages retenus des capteurs
+#   iot     [duree]   tache IoT (executee par le cron Moodle) + messages retenus des capteurs
+#   cron    [duree]   cron Moodle : dernieres executions, taches en echec, retard
 #   export  [duree]   ecrit tout dans ~/logs-<date>.txt (preuve / annexe)
 #
 # duree = fenetre journald (defaut 30m), ex : 10m, 2h, 1d.
@@ -26,9 +27,9 @@ N=8   # lignes affichees par section
 J()   { sudo journalctl --no-pager "$@"; }
 svc() { J -o cat --since "-$SINCE" -t "${P}-$1-1"; }          # journal d'un service (message seul)
 ind() { sed 's/^/  /'; }
-sources() {                                                   # criteres journald : conteneurs + Falco + cron IoT
+sources() {                                                   # criteres journald : conteneurs + Falco + cron Moodle
   local n; for n in $(docker compose ps -a --format '{{.Name}}'); do printf 'SYSLOG_IDENTIFIER=%s\n+\n' "$n"; done
-  printf '_SYSTEMD_UNIT=falco-modern-bpf.service\n+\nSYSLOG_IDENTIFIER=aimoodle-iot\n'
+  printf '_SYSTEMD_UNIT=falco-modern-bpf.service\n+\nSYSLOG_IDENTIFIER=aimoodle-cron\n'
 }
 
 etat() { echo "== Services"; docker compose ps --format 'table {{.Name}}\t{{.Status}}' | ind; }
@@ -73,11 +74,20 @@ falco() {
 }
 
 iot() {
-  echo "== Tache IoT (cron chaque minute) : dernieres executions ($SINCE)"
-  out=$(J -o cat --since "-$SINCE" -t aimoodle-iot | grep iot_mediation | tail -n 4)
+  echo "== Tache IoT (planifiee toutes les 5 min dans Moodle) : dernieres executions ($SINCE)"
+  out=$(J -o cat --since "-$SINCE" -t aimoodle-cron | grep iot_mediation | tail -n 4)
   [ -n "$out" ] && echo "$out" | ind || echo "  (aucune execution : cron installe ? -> bash ops/setup-host.sh)"
   echo "== Messages retenus des capteurs"
   docker compose exec -T mosquitto mosquitto_sub -h localhost -t '#' -v -W 2 -C 4 2>/dev/null | cut -c1-140 | ind
+}
+
+cron_() {
+  echo "== Cron Moodle ($SINCE) : dernieres executions (lance chaque minute par l'hote)"
+  out=$(J -o cat --since "-$SINCE" -t aimoodle-cron | grep -E "^Cron run completed correctly|^Cron completed at" | tail -n 3)
+  [ -n "$out" ] && echo "$out" | cut -c1-140 | ind || echo "  (aucune execution : cron installe ? -> bash ops/setup-host.sh)"
+  echo "== Cron Moodle : taches en echec"
+  out=$(J -o cat --since "-$SINCE" -t aimoodle-cron | grep -E "task failed" | sort | uniq -c | sort -rn | head -n $N)
+  [ -n "$out" ] && echo "$out" | cut -c1-200 | ind || echo "  (aucun echec)"
 }
 
 live() {
@@ -95,7 +105,7 @@ export_() {
 }
 
 case "$CMD" in
-  resume) etat; echo; waf; echo; gate; echo; ia; echo; plugin; echo; falco; echo; iot ;;
+  resume) etat; echo; waf; echo; gate; echo; ia; echo; plugin; echo; falco; echo; iot; echo; cron_ ;;
   live)   live ;;
   waf)    waf ;;
   gate)   gate ;;
@@ -103,6 +113,7 @@ case "$CMD" in
   plugin) plugin ;;
   falco)  falco ;;
   iot)    iot ;;
+  cron)   cron_ ;;
   export) export_ ;;
   *)      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

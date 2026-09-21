@@ -35,3 +35,10 @@ foreach ($DB->get_records_sql("SELECT id, timestart, result FROM {task_log} WHER
         ['c' => '%iot_mediation%'], 0, 3) as $r) {
     printf("  #%d %s  resultat=%s (0 = succes)\n", $r->id, date('d/m H:i:s', (int)$r->timestart), $r->result);
 }
+
+echo "\n== 5. Cron Moodle\n";
+$l = get_config('tool_task', 'lastcronstart');
+printf("  dernier demarrage : %s\n", $l ? date('d/m H:i:s', (int)$l) : 'JAMAIS (cron non installe ? -> bash ops/setup-host.sh)');
+printf("  taches planifiees bloquees (deja executees, en retard > 5 min) : %d | taches ad hoc en attente : %d (dont en echec : %d)\n",
+    $DB->count_records_select('task_scheduled', 'lastruntime > 0 AND nextruntime < ? AND disabled = 0', [time() - 300]),
+    $DB->count_records('task_adhoc'), $DB->count_records_select('task_adhoc', 'faildelay > 0'));
