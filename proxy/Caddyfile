@@ -25,6 +25,15 @@
 			# groupmodeforce (formulaires d'activite et de cours). On retire seulement la cible
 			# ARGS_NAMES pour ces noms : les VALEURS des parametres restent inspectees.
 			SecRuleUpdateTargetById 932260 "!ARGS_NAMES:/^groupmode/"
+			# 933160 (appel de fonction PHP a haut risque) : une question legitime sur Python contenant
+			# os.system/subprocess/eval declenche cette regle generique PHP, sans rapport avec du code
+			# reellement execute. Exclue UNIQUEMENT pour le service web du tuteur IA
+			# (aiplacement_tuteur_generate_text), PAS pour aiplacement_editor qui utilise le meme nom de
+			# parametre "prompttext" -- son exposition WAF reste inchangee. Seule la cible
+			# ARGS:json.0.args.prompttext est retiree de la regle 933160 (confirme via les logs Coraza,
+			# le corps JSON du batch AJAX Moodle donne ce chemin ARGS) ; le reste de la requete (et toute
+			# autre regle) continue d'etre inspecte normalement.
+			SecRule ARGS_GET:info "@streq aiplacement_tuteur_generate_text" "id:1000012,phase:1,pass,nolog,ctl:ruleRemoveTargetById=933160;ARGS:json.0.args.prompttext"
 			SecRuleEngine On
 			# Inspection des REPONSES desactivee : la sortie du tuteur (code/maths
 			# pedagogiques) ne doit pas etre scannee/bufferisee par le CRS ; sa
