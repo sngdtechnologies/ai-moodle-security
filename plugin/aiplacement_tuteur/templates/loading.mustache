@@ -1,0 +1,27 @@
+{{!
+    @template aiplacement_tuteur/loading
+
+    Indicateur affiche pendant la generation de la reponse.
+
+    Context variables required for this template:
+    * none
+
+    Example context (json):
+    {
+    }
+}}
+<section class="card mb-3">
+    <div class="card-body p-3">
+        <h3 class="h6 card-title d-inline">
+            {{#pix}} i/loading, core {{/pix}}
+            {{#str}} generating, aiplacement_tuteur {{/str}}
+        </h3>
+        <div class="card-text content mt-3">
+            <div class="d-block pt-3">
+                <button class="btn btn-sm btn-outline-secondary" data-action="tutor-cancel">
+                    {{#str}} cancel, core {{/str}}
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

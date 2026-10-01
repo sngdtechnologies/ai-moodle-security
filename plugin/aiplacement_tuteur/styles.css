@@ -1,0 +1,43 @@
+.ai-tutor-drawer {
+    position: fixed;
+    top: 60px;
+    bottom: 0;
+    right: calc(-315px + -10px);
+    width: 315px;
+    background-color: #f8f9fa;
+    z-index: 1016;
+    transition: right 0.2s ease, top 0.2s ease, bottom 0.2s ease, visibility 0.2s ease, transform 0.5s ease;
+    visibility: hidden;
+}
+.ai-tutor-drawer.show {
+    right: 0;
+    visibility: visible;
+}
+.ai-tutor-drawer-header {
+    padding: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+.ai-tutor-drawer-header .ai-tutor-drawer-button {
+    margin-left: auto;
+    margin-right: 5px;
+}
+.ai-tutor-drawer-body {
+    position: relative;
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    padding: 0.4rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #6a737b #f8f9fa;
+}
+#ai-tutor-response {
+    font-size: 0.875em;
+}
+.ai-tutor-response-controls button .icon,
+.ai-tutor-response-watermark img.icon {
+    margin-right: 0;
+}

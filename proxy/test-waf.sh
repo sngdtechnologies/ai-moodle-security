@@ -26,12 +26,14 @@ expect_block "XSS dans l'URL"               "$U/login/index.php?q=%3Cscript%3Eal
 expect_block "traversee de repertoire"      "$U/login/index.php?f=../../../../etc/passwd"
 expect_block "commande Unix dans une VALEUR" -X POST "$U/course/modedit.php" -d "name=x;/bin/cat /etc/passwd"
 expect_block "text/plain hors service.php"  -X POST "$U/login/index.php" -H "Content-Type: text/plain" -d "x"
+expect_block "regle 933160 toujours active ailleurs (appel PHP via un autre champ)" -X POST "$U/course/modedit.php" -d "name=x" --data-urlencode 'intro=eval("ls")'
 
 echo "== Usages Moodle legitimes (ne doivent PAS etre bloques)"
 expect_allow "page de connexion"                          "$U/login/index.php"
 expect_allow "formulaire d'activite (champ groupmode)"    -X POST "$U/course/modedit.php" -d "groupmode=0&name=Test"
 expect_allow "formulaire de cours (champ groupmodeforce)" -X POST "$U/course/edit.php" -d "groupmodeforce=0&fullname=Test"
 expect_allow "appel AJAX Moodle en text/plain"            -X POST "$U/lib/ajax/service.php?sesskey=abc" -H "Content-Type: text/plain" -d "[]"
+expect_allow "service web du tuteur IA (question Python contenant os.system)" -X POST "$U/lib/ajax/service.php?sesskey=abc&info=aiplacement_tuteur_generate_text" -H "Content-Type: application/json" -d '[{"index":0,"methodname":"aiplacement_tuteur_generate_text","args":{"contextid":1,"prompttext":"os.system(\"ls\")"}}]'
 
 echo; echo "Resultat : $pass OK, $fail KO"
 [ "$fail" -eq 0 ]

@@ -16,6 +16,9 @@ RUN rm -rf /var/www/html && \
 
 # Copie le plugin fournisseur dans ai/provider/ollamasecure
 COPY plugin/aiprovider_ollamasecure /var/www/html/ai/provider/ollamasecure
+# Copie l'emplacement tuteur dans ai/placement/tuteur (amd/build precompile, commite dans le depot
+# -- l'image n'a pas de Node/npm, voir Task 5).
+COPY plugin/aiplacement_tuteur /var/www/html/ai/placement/tuteur
 # config.php et entrypoint
 COPY moodle/config.php /var/www/html/config.php
 COPY moodle/entrypoint.sh /usr/local/bin/moodle-entrypoint.sh

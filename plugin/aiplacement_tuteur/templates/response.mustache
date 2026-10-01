@@ -1,0 +1,45 @@
+{{!
+    @template aiplacement_tuteur/response
+
+    Affiche la question posee et la reponse du tuteur.
+
+    Context variables required for this template:
+    * question - La question posee (texte brut)
+    * content - La reponse du tuteur : texte echappe en entites HTML (N4) avec des <br> ajoutes
+      pour les sauts de ligne (pas de HTML arbitraire)
+
+    Example context (json):
+    {
+        "question": "Qu'est-ce qu'une liste en Python ?",
+        "content": "<p>Une liste est ...</p>"
+    }
+}}
+<section class="card mb-3">
+    <div class="card-body p-3">
+        <h3 class="h6 card-title">{{question}}</h3>
+        <div class="card-text content mt-3">
+            <div id="ai-tutor-response" class="mb-3">
+                {{{content}}}
+            </div>
+            <div class="ai-tutor-response-watermark">
+                <small class="text-muted">
+                    {{#pix}} t/message, core {{/pix}}
+                    {{#str}} contentwatermark, core_ai {{/str}}
+                </small>
+            </div>
+            <div class="ai-tutor-response-controls d-block pt-3">
+                <button class="btn btn-sm btn-outline-secondary" data-action="tutor-regenerate">
+                    {{#pix}} a/refresh, core {{/pix}}
+                    {{#str}} regenerate, aiplacement_tuteur {{/str}}
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="tutor-newquestion">
+                    {{#str}} newquestion, aiplacement_tuteur {{/str}}
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="copytoclipboard" data-clipboard-target="#ai-tutor-response">
+                    {{#pix}} e/copy, core {{/pix}}
+                    {{#str}} copy, core {{/str}}
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,28 @@
+{{!
+    @template aiplacement_tuteur/button
+
+    Bouton qui ouvre le tiroir de discussion du tuteur IA.
+
+    Context variables required for this template:
+    * none
+
+    Example context (json):
+    {
+    }
+}}
+<div class="ai-tutor-controls pt-3 pb-3">
+    <button class="btn btn-outline-secondary"
+            id="ai-tutor-open"
+            aria-controls="ai-tutor-drawer"
+            type="button"
+            data-action="tutor-open"
+            data-toggle="tooltip"
+            data-html="true"
+            data-delay="200"
+            title="{{#str}} tutortooltip, aiplacement_tuteur {{/str}}"
+    >
+        {{#pix}} t/message, core {{/pix}}
+        {{#str}} tutorbuttonlabel, aiplacement_tuteur {{/str}}
+    </button>
+    {{> core_message/message_jumpto }}
+</div>

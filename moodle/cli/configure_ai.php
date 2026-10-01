@@ -12,7 +12,8 @@ set_config('ollama_token', $token, 'aiprovider_ollamasecure');
 // enable_plugin attend le nom COURT du plugin (sans le prefixe de type).
 \core\plugininfo\aiprovider::enable_plugin('ollamasecure', 1);
 \core\plugininfo\aiplacement::enable_plugin('editor', 1);
-cli_writeln('Fournisseur ollamasecure et placement editor actives.');
+\core\plugininfo\aiplacement::enable_plugin('tuteur', 1);
+cli_writeln('Fournisseur ollamasecure et placements editor+tuteur actives.');
 
 // 3) Purger les caches.
 purge_all_caches();
