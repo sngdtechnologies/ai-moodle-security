@@ -1,0 +1,35 @@
+{{!
+    @template aiplacement_tuteur/drawer
+
+    Coquille du tiroir de discussion du tuteur IA. Le JavaScript (Task 5) y injecte le
+    formulaire de question, le chargement, la reponse ou l'erreur.
+
+    Context variables required for this template:
+    * userid - User ID
+    * contextid - Context ID
+
+    Example context (json):
+    {
+        "userid": "2",
+        "contextid": "25"
+    }
+}}
+<div class="ai-tutor-drawer" id="ai-tutor-drawer" aria-label={{#quote}}{{#str}} aidrawerlabel, aiplacement_tuteur {{/str}}{{/quote}} tabindex="-1" role="region">
+    <div class="ai-tutor-drawer-header">
+        <button id="ai-tutor-drawer-close" class="btn ai-tutor-drawer-button" type="button" data-action="tutor-open">
+            {{!-- Reutilise data-action="tutor-open" (pas un "tutor-close" dedie) : le gestionnaire
+                 de clic de placement.js appelle toggleDrawer(), qui ferme si deja ouvert. Meme
+                 mecanisme qu'aiplacement_courseassist (son bouton de fermeture partage le
+                 data-action de son bouton d'ouverture). --}}
+            {{#pix}} e/cancel, core {{/pix}}
+            <span class="sr-only">{{#str}} closedrawer, core {{/str}}</span>
+        </button>
+    </div>
+    <div class="ai-tutor-drawer-body" id="ai-tutor-drawer-body" data-hasdata="0" data-cancelled="0">
+    </div>
+</div>
+{{#js}}
+    require(['aiplacement_tuteur/placement'], function(AITutor) {
+        const AI = new AITutor({{userid}}, {{contextid}});
+    });
+{{/js}}
