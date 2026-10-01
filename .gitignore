@@ -8,3 +8,6 @@ secrets/*.txt
 # Python (analyse eval)
 __pycache__/
 *.pyc
+
+# Worktrees locaux (execution de plans via subagent-driven-development)
+.worktrees/
