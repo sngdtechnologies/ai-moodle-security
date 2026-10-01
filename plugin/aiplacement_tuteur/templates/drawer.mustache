@@ -25,11 +25,10 @@
             <span class="sr-only">{{#str}} closedrawer, core {{/str}}</span>
         </button>
     </div>
-    <div class="ai-tutor-drawer-body" id="ai-tutor-drawer-body" data-hasdata="0" data-cancelled="0">
-    </div>
+    <div class="ai-tutor-drawer-body" id="ai-tutor-drawer-body"></div>
 </div>
 {{#js}}
     require(['aiplacement_tuteur/placement'], function(AITutor) {
-        const AI = new AITutor({{userid}}, {{contextid}});
+        new AITutor({{userid}}, {{contextid}});
     });
 {{/js}}

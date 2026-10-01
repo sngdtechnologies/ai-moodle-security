@@ -13,6 +13,13 @@
 // "write", quel que soit l'utilisateur de session actif (deja rencontre et documente en Task 2).
 // Predefinir WS_SERVER=true fait passer la garde de connexion comme le ferait une vraie requete
 // de service web, sans contourner aucun controle de capacite/permission.
+//
+// NB : ce script teste la couche action/PHP via call_external_function() (avec WS_SERVER=true),
+// pas le trajet HTTP/WAF complet. Une verification HTTP reelle (POST authentifie a travers
+// proxy+WAF) a ete faite separement et a revele un faux positif OWASP CRS (regle 933160 ->
+// anomalie 949110, HTTP 403) sur une question contenant du code Python ("os.system(...)") ;
+// voir le rapport de correction (verification WAF) -- decision de la personne responsable
+// requise avant toute modification de regle WAF.
 define('WS_SERVER', true);
 define('CLI_SCRIPT', true);
 require('/var/www/html/config.php');

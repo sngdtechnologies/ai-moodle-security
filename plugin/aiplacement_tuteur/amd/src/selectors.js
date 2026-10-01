@@ -9,7 +9,6 @@ export default {
     ELEMENTS: {
         DRAWER: '#ai-tutor-drawer',
         DRAWER_BODY: '#ai-tutor-drawer .ai-tutor-drawer-body',
-        PAGE: '#page',
         JUMPTO: '.ai-tutor-controls [data-region="jumpto"]',
         DRAWER_CLOSE: '#ai-tutor-drawer-close',
         QUESTION_INPUT: '#ai-tutor-question',

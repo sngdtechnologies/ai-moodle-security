@@ -29,6 +29,8 @@ const AITutor = class {
     lastQuestion = '';
     /** @type {Boolean} Empeche une double soumission concurrente. */
     isAsking = false;
+    /** @type {Number} Incremented on every new question and on Cancel, to discard stale responses. */
+    requestSeq = 0;
     /** @type {Boolean} */
     isDrawerFocusLocked = false;
 
@@ -38,7 +40,6 @@ const AITutor = class {
 
         this.drawerElement = document.querySelector(Selectors.ELEMENTS.DRAWER);
         this.drawerBodyElement = document.querySelector(Selectors.ELEMENTS.DRAWER_BODY);
-        this.pageElement = document.querySelector(Selectors.ELEMENTS.PAGE);
         this.jumpToElement = document.querySelector(Selectors.ELEMENTS.JUMPTO);
         this.openButtonElement = document.querySelector(Selectors.ELEMENTS.OPEN_BUTTON);
         this.drawerCloseElement = this.drawerElement.querySelector(Selectors.ELEMENTS.DRAWER_CLOSE);
@@ -147,6 +148,7 @@ const AITutor = class {
         if (cancelAction) {
             cancelAction.addEventListener('click', (e) => {
                 e.preventDefault();
+                this.requestSeq++;
                 this.isAsking = false;
                 this.displayAskForm();
             });
@@ -241,8 +243,9 @@ const AITutor = class {
             return;
         }
         this.isAsking = true;
+        const mySeq = ++this.requestSeq;
         this.lastQuestion = question;
-        this.displayLoading();
+        await this.displayLoading();
         const request = {
             methodname: 'aiplacement_tuteur_generate_text',
             args: {
@@ -252,6 +255,9 @@ const AITutor = class {
         };
         try {
             const responseObj = await Ajax.call([request])[0];
+            if (mySeq !== this.requestSeq) {
+                return; // Stale response (superseded by a newer question or a cancel) — discard silently.
+            }
             this.isAsking = false;
             if (responseObj.error) {
                 this.displayError();
@@ -260,6 +266,9 @@ const AITutor = class {
             const generatedContent = AIHelper.replaceLineBreaks(responseObj.generatedcontent);
             this.displayResponse(question, generatedContent);
         } catch (error) {
+            if (mySeq !== this.requestSeq) {
+                return; // Stale — a newer question or cancel already took over.
+            }
             // Echec reseau/exception (Review Focus 4) : jamais de chargement bloque indefiniment.
             this.isAsking = false;
             window.console.log(error);
