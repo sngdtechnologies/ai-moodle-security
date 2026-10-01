@@ -1,0 +1,25 @@
+{{!
+    @template aiplacement_tuteur/ask
+
+    Formulaire de saisie d'une question pour le tuteur IA.
+
+    Context variables required for this template:
+    * none
+
+    Example context (json):
+    {
+    }
+}}
+<section class="ai-tutor-ask mb-3">
+    <label for="ai-tutor-question" class="sr-only">{{#str}} askplaceholder, aiplacement_tuteur {{/str}}</label>
+    <textarea id="ai-tutor-question"
+              class="form-control"
+              rows="4"
+              placeholder="{{#str}} askplaceholder, aiplacement_tuteur {{/str}}"
+    ></textarea>
+    <div class="d-block pt-3">
+        <button class="btn btn-primary" type="button" data-action="tutor-ask" disabled>
+            {{#str}} send, aiplacement_tuteur {{/str}}
+        </button>
+    </div>
+</section>
