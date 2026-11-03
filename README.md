@@ -1,3 +1,5 @@
+[![DOI](zenodo.org/badge/DOI/10.5281/zenodo.23891862.svg)](https://orcid.org/0009-0009-4130-5656)
+
 # AI-Moodle-Security — Intégration sécurisée d'Ollama dans Moodle via Docker
 
 Prototype du mémoire de Master **« Intégration sécurisée d'une IA locale (Ollama) dans Moodle via

@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software or its evaluation data, please cite it as below."
+title: "Secure containerised architecture for Ollama and Moodle integration: hardened Compose stack, AI provider plugin and red teaming evaluation suite"
+type: software
+version: 1.0.1
+date-released: 2026-11-03
+authors:
+  - family-names: "SOB NGHAMI"
+    given-names: "Gilles Descartes"
+    affiliation: "WINTECHGROUP E-University"
+    orcid: "https://orcid.org/0009-0009-4130-5656"
+license: MIT
+repository-code: "https://github.com/sngdtechnologies/ai-moodle-security"
+# DOI de CONCEPT (celui qui pointe toujours vers la derniere version).
+# Decommentez en remplacant par le votre, tel qu'affiche par Zenodo :
+# doi: "10.5281/zenodo.23891862"
+abstract: >-
+  Reference implementation and evaluation artefact accompanying a master's
+  thesis on the secure integration of local LLM inference into a Moodle
+  learning platform. It contains a hardened Docker Compose stack (seven
+  containers, six networks, no outbound route from the application and
+  inference containers), a Moodle 4.5 AI subsystem provider plugin
+  implementing a four level guardrail pipeline, a seccomp profile and Falco
+  runtime rules for the inference container, and a red teaming evaluation
+  suite (50 adversarial prompts in five categories, runner, raw results for
+  the bare model and the guarded tutor).
+keywords:
+  - prompt injection
+  - LLM security
+  - container hardening
+  - Moodle
+  - Ollama
+  - Docker
+  - data sovereignty
+  - red teaming
+  - educational technology
