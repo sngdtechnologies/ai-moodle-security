@@ -1,4 +1,4 @@
-[![DOI](zenodo.org/badge/DOI/10.5281/zenodo.23891862.svg)](https://orcid.org/0009-0009-4130-5656)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23891862.svg)](https://doi.org/10.5281/zenodo.23891862)
 
 # AI-Moodle-Security — Intégration sécurisée d'Ollama dans Moodle via Docker
 

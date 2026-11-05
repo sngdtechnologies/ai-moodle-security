@@ -11,9 +11,7 @@ authors:
     orcid: "https://orcid.org/0009-0009-4130-5656"
 license: MIT
 repository-code: "https://github.com/sngdtechnologies/ai-moodle-security"
-# DOI de CONCEPT (celui qui pointe toujours vers la derniere version).
-# Decommentez en remplacant par le votre, tel qu'affiche par Zenodo :
-# doi: "10.5281/zenodo.23891862"
+doi: "10.5281/zenodo.23891862"
 abstract: >-
   Reference implementation and evaluation artefact accompanying a master's
   thesis on the secure integration of local LLM inference into a Moodle
