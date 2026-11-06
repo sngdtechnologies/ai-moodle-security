@@ -3,7 +3,7 @@ message: "If you use this software or its evaluation data, please cite it as bel
 title: "Secure containerised architecture for Ollama and Moodle integration: hardened Compose stack, AI provider plugin and red teaming evaluation suite"
 type: software
 version: 1.0.1
-date-released: 2026-11-03
+date-released: 2026-11-06
 authors:
   - family-names: "SOB NGHAMI"
     given-names: "Gilles Descartes"
