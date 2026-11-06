@@ -1,0 +1,7 @@
+# Épinglage du modèle par blob SHA-256 (thèse §5.4, intégrité chaîne d'approvisionnement).
+# Produit par `ollama/build-model.sh` : FROM du Modelfile `tuteur-secure`, dérivé de phi3:mini.
+# Régénérer après toute mise à jour de phi3:mini :
+#   docker compose exec ollama ollama show tuteur-secure --modelfile | grep ^FROM
+tuteur-secure.base=phi3:mini
+tuteur-secure.digest=sha256-633fc5be925f9a484b61d6f9b9a78021eeb462100bd557309f01ba84cac26adf
+tuteur-secure.pinned-on=2026-11-06
